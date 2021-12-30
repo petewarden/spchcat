@@ -13,24 +13,24 @@
 
 include definitions.mk
 
-default: $(LIVE_STT_BIN)
+default: $(SPCHCAT_BIN)
 
 clean:
-	rm -f stt
+	rm -f spchcat
 
-$(LIVE_STT_BIN): live_stt.cc Makefile
-	$(CXX) $(CFLAGS) $(CFLAGS_STT) $(SOX_CFLAGS) live_stt.cc $(LDFLAGS) $(SOX_LDFLAGS)
+$(SPCHCAT_BIN): spchcat.cc Makefile
+	$(CXX) $(CFLAGS) $(CFLAGS_SPCHCAT) $(SOX_CFLAGS) spchcat.cc $(LDFLAGS) $(SOX_LDFLAGS)
 ifeq ($(OS),Darwin)
 	install_name_tool -change bazel-out/local-opt/bin/native_client/libstt.so @rpath/libstt.so stt
 endif
 
-run: $(LIVE_STT_BIN)
+run: $(SPCHCAT_BIN)
 	${META_LD_LIBRARY_PATH}=${TFDIR}/bazel-bin/native_client:${${META_LD_LIBRARY_PATH}} ./stt ${ARGS}
 
-debug: $(LIVE_STT_BIN)
+debug: $(SPCHCAT_BIN)
 	${META_LD_LIBRARY_PATH}=${TFDIR}/bazel-bin/native_client:${${META_LD_LIBRARY_PATH}} gdb --args ./stt ${ARGS}
 
-install: $(LIVE_STT_BIN)
+install: $(SPCHCAT_BIN)
 	install -d ${PREFIX}/lib
 	install -m 0644 ${TFDIR}/bazel-bin/native_client/libstt.so ${PREFIX}/lib/
 	install -d ${PREFIX}/include
@@ -39,7 +39,7 @@ install: $(LIVE_STT_BIN)
 	install -m 0755 stt ${PREFIX}/bin/
 
 uninstall:
-	rm -f ${PREFIX}/bin/live_stt
+	rm -f ${PREFIX}/bin/spchcat
 	rmdir --ignore-fail-on-non-empty ${PREFIX}/bin
 	rm -f ${PREFIX}/lib/libstt.so
 	rmdir --ignore-fail-on-non-empty ${PREFIX}/lib
