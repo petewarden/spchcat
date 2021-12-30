@@ -19,10 +19,10 @@ ifeq ($(findstring _NT,$(OS)),_NT)
 PLATFORM_EXE_SUFFIX := .exe
 endif
 
-SPCHCAT_BIN       := spchcat$(PLATFORM_EXE_SUFFIX)
-CFLAGS_SPCHCAT    := -std=c++11 -o $(SPCHCAT_BIN)
-LINK_SPCHCAT      := -lstt -lkenlm -ltflitedelegates -ltensorflowlite
-LINK_PATH_SPCHCAT := -L${TFDIR}/bazel-bin/native_client -L${TFDIR}/bazel-bin/tensorflow/lite
+SPCHCAT_BIN   := spchcat$(PLATFORM_EXE_SUFFIX)
+CFLAGS_STT    := -std=c++11 -o $(SPCHCAT_BIN)
+LINK_STT      := -lstt -lkenlm -ltflitedelegates -ltensorflowlite
+LINK_PATH_STT := -L${TFDIR}/bazel-bin/native_client -L${TFDIR}/bazel-bin/tensorflow/lite
 
 ifeq ($(TARGET),host)
 TOOLCHAIN       :=
@@ -61,9 +61,9 @@ TOOL_CC     := cl.exe
 TOOL_CXX    := cl.exe
 TOOL_LD     := link.exe
 TOOL_LIBEXE := lib.exe
-LINK_SPCHCAT      := $(shell cygpath "$(TFDIR)/bazel-bin/native_client/libstt.so.if.lib") $(shell cygpath "$(TFDIR)/bazel-bin/native_client/libkenlm.so.if.lib") $(shell cygpath "$(TFDIR)/bazel-bin/native_client/libtflitedelegates.so.if.lib") $(shell cygpath "$(TFDIR)/bazel-bin/tensorflow/lite/libtensorflowlite.so.if.lib")
-LINK_PATH_SPCHCAT :=
-CFLAGS_SPCHCAT    := -nologo -Fe$(SPCHCAT_BIN)
+LINK_STT      := $(shell cygpath "$(TFDIR)/bazel-bin/native_client/libstt.so.if.lib") $(shell cygpath "$(TFDIR)/bazel-bin/native_client/libkenlm.so.if.lib") $(shell cygpath "$(TFDIR)/bazel-bin/native_client/libtflitedelegates.so.if.lib") $(shell cygpath "$(TFDIR)/bazel-bin/tensorflow/lite/libtensorflowlite.so.if.lib")
+LINK_PATH_STT :=
+CFLAGS_STT    := -nologo -Fe$(SPCHCAT_BIN)
 SOX_CFLAGS      :=
 SOX_LDFLAGS     :=
 PYTHON_PACKAGES := numpy${NUMPY_BUILD_VERSION}
@@ -144,8 +144,8 @@ endif
 
 CFLAGS   += $(EXTRA_CFLAGS)
 CXXFLAGS += $(EXTRA_CXXFLAGS)
-LIBS     := $(LINK_SPCHCAT) $(EXTRA_LIBS)
-LDFLAGS_DIRS := $(LINK_PATH_SPCHCAT) $(EXTRA_LDFLAGS)
+LIBS     := $(LINK_STT) $(EXTRA_LIBS)
+LDFLAGS_DIRS := $(LINK_PATH_STT) $(EXTRA_LDFLAGS)
 LDFLAGS  += $(LDFLAGS_NEEDED) $(LDFLAGS_RPATH) $(LDFLAGS_DIRS) $(LIBS)
 
 AS      := $(TOOLCHAIN)$(TOOL_AS)
