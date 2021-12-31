@@ -1,23 +1,23 @@
-# STT Standalone Client Example
+# Spchcat
 
-This project is a copy of the example program from [Coqui's open-source library](https://github.com/coqui-ai/STT), with just the files needed to compile against a binary release. It's designed as a starting point for building your own tool using speech to text. There's more documentation available as a [Colab notebook](https://colab.research.google.com/drive/1JfagqsT1ts93ixdRImyee6u06Fbvslcv?usp=sharing).
+A tool to convert speech in audio files or live microphone input into text transcriptions, using [Coqui's open-source speech to text library](https://github.com/coqui-ai/STT).
 
 ## Usage
 
 To build the tool, download [a binary release of STT](https://github.com/coqui-ai/STT/releases/download/v1.1.0/native_client.tflite.Linux.tar.xz) and extract it into a folder. Then run the following makefile command from inside the folder holding this repo (where `../stt_download` is the path to the folder you extracted the binary release to):
 
 ```bash
-make stt LINK_PATH_STT=-L../stt_download
+make spchcat LINK_PATH_STT=-L../stt_download
 ```
 
-This should now build an `stt` binary file. To run it, use something like this:
+This should now build a `spchcat` binary file. To run it, use something like this:
 
 ```bash
-LD_LIBRARY_PATH=../stt_download stt --model ../model.tflite --audio ../audio/4507-16021-0012.wav
+LD_LIBRARY_PATH=../stt_download ./spchcat --model ../model.tflite --audio ../audio/4507-16021-0012.wav
 ```
 
 The `LD_LIBRARY_PATH` can be removed if you install the `.so` files from the binary release folder in a system path like `/usr/lib`. The Colab notebook shows how to download the model and example audio files.
 
 ## Contributors
 
-The code is a direct copy of Coqui's original, curated by [Pete Warden](https://twitter.com/petewarden), pete@petewarden.com.
+Written by [Pete Warden](https://twitter.com/petewarden), pete@petewarden.com.
