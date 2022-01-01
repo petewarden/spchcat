@@ -119,6 +119,49 @@ CandidateTranscriptToWords(const CandidateTranscript* transcript)
 }
 
 std::string
+CandidateTranscriptToFormattedString(const CandidateTranscript* transcript)
+{
+  std::string result;
+
+  std::string word = "";
+  float word_start_time = 0;
+  float previous_end_time = 0;
+
+  // Loop through each token
+  for (int i = 0; i < transcript->num_tokens; i++)
+  {
+    const TokenMetadata& token = transcript->tokens[i];
+
+    // Append token to word if it's not a space
+    if (strcmp(token.text, u8" ") != 0)
+    {
+      // Log the start time of the new word
+      if (word.length() == 0)
+      {
+        word_start_time = token.start_time;
+        const float time_since_previous = word_start_time - previous_end_time;
+        if (time_since_previous > 1.0) {
+          result += "\n";
+        }
+      }
+      word.append(token.text);
+      previous_end_time = token.start_time;
+    }
+
+    // Word boundary is either a space or the last token in the array
+    if (strcmp(token.text, u8" ") == 0 || i == transcript->num_tokens - 1)
+    {
+      result += word + " ";
+      //fprintf(stderr, "%f\n", previous_end_time);
+      // Reset
+      word = "";
+    }
+  }
+
+  return result;
+}
+
+std::string
 CandidateTranscriptToJSON(const CandidateTranscript* transcript)
 {
   std::ostringstream out_string;
@@ -286,7 +329,12 @@ LocalDsSTT(ModelState* aCtx, const short* aBuffer, size_t aBufferSize,
   }
   else
   {
-    res.string = STT_SpeechToText(aCtx, aBuffer, aBufferSize);
+    const Metadata* metadata = STT_SpeechToTextWithMetadata(aCtx, aBuffer, aBufferSize, 1);
+    std::string result_string = CandidateTranscriptToFormattedString(&metadata->transcripts[0]);
+    // Make a copy so it's not on the stack. TODO: Fix leak.
+    std::string* new_string = new std::string(result_string);
+    res.string = new_string->c_str();
+    STT_FreeMetadata((Metadata*)metadata);
   }
   // sphinx-doc: c_ref_inference_stop
 
@@ -636,9 +684,9 @@ int TranscribeLiveSource(ModelState* ctx, const char* source_name)
 
     STT_FeedAudioContent(stream_ctx, mic_buffer, source_buffer_size);
 
-    char* current_c_str = STT_IntermediateDecode(stream_ctx);
-    std::string current(current_c_str);
-    STT_FreeString(current_c_str);
+    Metadata* metadata = STT_IntermediateDecodeWithMetadata(stream_ctx, 1);
+    const std::string current = CandidateTranscriptToFormattedString(&metadata->transcripts[0]);
+    STT_FreeMetadata((Metadata*)metadata);
     if (current != previous)
     {
       if (is_interactive) {
