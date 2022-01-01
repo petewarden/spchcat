@@ -562,15 +562,6 @@ void TranscribeFiles(ModelState* ctx, const char* audio)
 #endif // NO_SOX
 }
 
-bool HasEnding(std::string const& fullString, std::string const& ending) {
-  if (fullString.length() >= ending.length()) {
-    return (0 == fullString.compare(fullString.length() - ending.length(), ending.length(), ending));
-  }
-  else {
-    return false;
-  }
-}
-
 int TranscribeLiveSource(ModelState* ctx, const char* source_name)
 {
   const pa_sample_spec ss = {

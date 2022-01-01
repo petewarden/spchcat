@@ -85,7 +85,7 @@ void PrintHelp(const char* bin)
     "Convert speech in audio to text transcripts.\n"
     "\n"
     "\t--language\tWhich language to look for (default '" << language << "')\n"
-    "\t--source NAME\tName of the audio source device (default 'mic', can also be 'system', 'file')\n"
+    "\t--source NAME\tName of the audio source (default 'mic', can also be 'system', 'file')\n"
     "\t--help\t\tShow help\n"
     "\nAdvanced settings:\n\n"
     "\t--model MODEL\t\t\tPath to the model (protocol buffer binary file)\n"
@@ -100,7 +100,7 @@ void PrintHelp(const char* bin)
     "\t--json\t\t\t\tExtended output, shows word timings as JSON\n"
     "\t--candidate_transcripts NUMBER\tNumber of candidate transcripts to include in JSON output\n"
     "\t--stream size\t\t\tRun in stream mode, output intermediate results\n"
-    "\t--extended_stream size\t\t\tRun in stream mode using metadata output, output intermediate results\n"
+    "\t--extended_stream size\t\tRun in stream mode using metadata output, output intermediate results\n"
     "\t--hot_words\t\t\tHot-words and their boosts. Word:Boost pairs are comma-separated\n"
     "\t--version\t\t\tPrint version and exits\n";
   char* version = STT_Version();
@@ -112,6 +112,34 @@ void PrintHelp(const char* bin)
 bool DoesFileExist(const std::string& path) {
   struct stat sb;
   return (stat(path.c_str(), &sb) == 0);
+}
+
+bool HasEnding(std::string const& fullString, std::string const& ending) {
+  if (fullString.length() >= ending.length()) {
+    return (0 == fullString.compare(fullString.length() - ending.length(), ending.length(), ending));
+  }
+  else {
+    return false;
+  }
+}
+
+std::string FindFileWithExtension(const std::string& folder, const std::string& extension) {
+  std::string result;
+  DIR* dp = opendir(folder.c_str());
+  if (dp != NULL)
+  {
+    struct dirent* ep;
+    while (ep = readdir(dp))
+    {
+      std::string filename = ep->d_name;
+      if (HasEnding(filename, extension)) {
+        result = folder + filename;
+        break;
+      }
+    }
+    closedir(dp);
+  }
+  return result;
 }
 
 void SplitString(std::string const& str, const char delim,
@@ -264,16 +292,23 @@ bool ProcessArgs(int argc, char** argv)
   }
 
   if (!model) {
-    static std::string model_string = models_folder + language + "/" + "model.tflite";
-    if (!DoesFileExist(model_string)) {
-      fprintf(stderr, "Warning: Model not found at %s\n", model_string.c_str());
+    const std::string language_folder = models_folder + language + "/";
+    static std::string model_string = FindFileWithExtension(language_folder, ".tflite");
+    if (model_string.length() == 0) {
+      fprintf(stderr, "Warning: Model not found in %s\n", language_folder.c_str());
     }
-    model = model_string.c_str();
+    else {
+      model = model_string.c_str();
+    }
   }
 
   if (!scorer) {
-    static std::string scorer_string = models_folder + language + "/" + "scorer.scorer";
-    if (DoesFileExist(scorer_string)) {
+    const std::string language_folder = models_folder + language + "/";
+    static std::string scorer_string = FindFileWithExtension(language_folder, ".scorer");
+    if (scorer_string.length() == 0) {
+      fprintf(stderr, "Warning: Scorer not found in %s\n", language_folder.c_str());
+    }
+    else {
       scorer = scorer_string.c_str();
     }
   }

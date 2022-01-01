@@ -14,6 +14,7 @@ en_US,english/coqui/v1.0.0-large-vocab
 et_EE,estonian/itml/v0.1.1
 eu_ES,basque/itml/v0.1.1
 fi_FI,finnish/itml/v0.1.1
+fr_FR,french/commonvoice-fr/v0.6
 fy_NL,frisian/itml/v0.1.1
 ga_IE,irish/itml/v0.1.1
 hu_HU,hungarian/itml/v0.1.1
