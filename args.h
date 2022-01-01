@@ -15,15 +15,15 @@ const char* app_name = NULL;
 
 const char* language = NULL;
 
+const char* source = NULL;
+
+std::vector<std::string> filename_args;
+
 const std::string models_folder = "/etc/spchcat/models/";
 
 const char* model = NULL;
 
 const char* scorer = NULL;
-
-const char* audio = NULL;
-
-const char* source = "mic";
 
 int source_buffer_size = 160 * 4;
 
@@ -61,6 +61,9 @@ const std::string ListAvailableLanguages() {
     struct dirent* ep;
     while (ep = readdir(dp))
     {
+      if (ep->d_name[0] == '.') {
+        continue;
+      }
       if (result.length() == 0) {
         result += ep->d_name;
       }
@@ -83,8 +86,8 @@ void PrintHelp(const char* bin)
     "\n"
     "\t--language\tWhich language to look for (default '" << language << "')\n"
     "\t--source NAME\tName of the audio source device (default 'mic', can also be 'system', 'file')\n"
-    "\t--help\t\t\t\tShow help\n"
-    "Advanced settings:\n"
+    "\t--help\t\tShow help\n"
+    "\nAdvanced settings:\n\n"
     "\t--model MODEL\t\t\tPath to the model (protocol buffer binary file)\n"
     "\t--scorer SCORER\t\t\tPath to the external scorer file\n"
     "\t--source_buffer_size SIZE\tNumber of samples to fetch from source\n"
@@ -138,7 +141,7 @@ bool ProcessArgs(int argc, char** argv)
     language = parts[0].c_str();
   }
 
-  const char* const short_opts = "s:l:m:o:z:a:b:c:d:tejs:r:R:w:vh";
+  const char* const short_opts = "s:l:m:o:z:b:c:d:tejs:r:R:w:vh";
   const option long_opts[] = {
           {"source", required_argument, nullptr, 's'},
           {"language", required_argument, nullptr, 'l'},
@@ -188,10 +191,6 @@ bool ProcessArgs(int argc, char** argv)
 
     case 'z':
       source_buffer_size = atoi(optarg);
-      break;
-
-    case 'a':
-      audio = optarg;
       break;
 
     case 'b':
@@ -249,6 +248,14 @@ bool ProcessArgs(int argc, char** argv)
     }
   }
 
+  // Capture any non '-' prefixed file names at the end of the command line.
+  if (optind < argc) {
+    do {
+      char* file = argv[optind];
+      filename_args.push_back(file);
+    } while (++optind < argc);
+  }
+
   if (has_versions) {
     char* version = STT_Version();
     std::cout << "Coqui " << version << "\n";
@@ -275,6 +282,22 @@ bool ProcessArgs(int argc, char** argv)
     std::cout <<
       "Stream buffer size must be multiples of 160\n";
     return false;
+  }
+
+  if (source == NULL) {
+    if (filename_args.size() == 0) {
+      source = "mic";
+    }
+    else {
+      source = "file";
+    }
+  }
+  else {
+    if (strcmp(source, "file") != 0) {
+      std::cout <<
+        "Files were specified on command line, but --source was not set to file\n";
+      return false;
+    }
   }
 
   return true;

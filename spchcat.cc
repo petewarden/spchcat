@@ -510,7 +510,8 @@ void TranscribeFiles(ModelState* ctx, const char* audio)
   struct stat wav_info;
   if (0 != stat(audio, &wav_info))
   {
-    printf("Error on stat: %d\n", errno);
+    fprintf(stderr, "File not found: %s\n", audio);
+    return;
   }
 
   switch (wav_info.st_mode & S_IFMT)
@@ -525,7 +526,7 @@ void TranscribeFiles(ModelState* ctx, const char* audio)
 #ifndef NO_DIR
   case S_IFDIR:
   {
-    printf("Running on directory %s\n", audio);
+    fprintf(stderr, "Running on directory %s\n", audio);
     DIR* wav_dir = opendir(audio);
     assert(wav_dir);
 
@@ -533,7 +534,8 @@ void TranscribeFiles(ModelState* ctx, const char* audio)
     while ((entry = readdir(wav_dir)) != NULL)
     {
       std::string fname = std::string(entry->d_name);
-      if (fname.find(".wav") == std::string::npos)
+      if ((fname.find(".wav") == std::string::npos) ||
+        (fname[0] == '.'))
       {
         continue;
       }
@@ -541,7 +543,7 @@ void TranscribeFiles(ModelState* ctx, const char* audio)
       std::ostringstream fullpath;
       fullpath << audio << "/" << fname;
       std::string path = fullpath.str();
-      printf("> %s\n", path.c_str());
+      fprintf(stderr, "> %s\n", path.c_str());
       ProcessFile(ctx, path.c_str(), show_times);
     }
     closedir(wav_dir);
@@ -550,7 +552,7 @@ void TranscribeFiles(ModelState* ctx, const char* audio)
 #endif
 
   default:
-    printf("Unexpected type for %s: %d\n", audio, (wav_info.st_mode & S_IFMT));
+    fprintf(stderr, "Unexpected type for %s: %d\n", audio, (wav_info.st_mode & S_IFMT));
     break;
   }
 
@@ -569,7 +571,7 @@ bool HasEnding(std::string const& fullString, std::string const& ending) {
   }
 }
 
-int TranscribeMicrophone(ModelState* ctx, const char* microphone)
+int TranscribeLiveSource(ModelState* ctx, const char* source_name)
 {
   const pa_sample_spec ss = {
       .format = PA_SAMPLE_S16LE,
@@ -577,11 +579,11 @@ int TranscribeMicrophone(ModelState* ctx, const char* microphone)
       .channels = 1 };
 
   const char* device;
-  if (strcmp(source, "mic") == 0)
+  if (strcmp(source_name, "mic") == 0)
   {
     device = NULL;
   }
-  else if (strcmp(source, "system") == 0)
+  else if (strcmp(source_name, "system") == 0)
   {
     // Use a simplistic algorithm that assumes the first device name ending in
     // .monitor is the system audio source.
@@ -602,7 +604,7 @@ int TranscribeMicrophone(ModelState* ctx, const char* microphone)
   }
   else
   {
-    device = source;
+    device = source_name;
   }
 
   const bool is_interactive = isatty(fileno(stdout));
@@ -683,7 +685,6 @@ finish:
     pa_simple_free(source_stream);
 
   free((void*)(mic_buffer));
-  //    res.string = STT_FinishStream(ctx);
 
   return result;
 }
@@ -757,13 +758,14 @@ int main(int argc, char** argv)
     }
   }
 
-  if (audio != nullptr)
-  {
-    TranscribeFiles(ctx, audio);
+  if (strcmp(source, "file") == 0) {
+    for (const std::string filename : filename_args) {
+      TranscribeFiles(ctx, filename.c_str());
+    }
   }
   else
   {
-    TranscribeMicrophone(ctx, source);
+    TranscribeLiveSource(ctx, source);
   }
 
   STT_FreeModel(ctx);
