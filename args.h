@@ -293,7 +293,7 @@ bool ProcessArgs(int argc, char** argv)
     }
   }
   else {
-    if (strcmp(source, "file") != 0) {
+    if ((filename_args.size() > 0) && (strcmp(source, "file") != 0)) {
       std::cout <<
         "Files were specified on command line, but --source was not set to file\n";
       return false;
