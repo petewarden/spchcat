@@ -123,7 +123,8 @@ bool HasEnding(std::string const& fullString, std::string const& ending) {
   }
 }
 
-std::string FindFileWithExtension(const std::string& folder, const std::string& extension) {
+std::string FindFileWithExtension(const std::string& folder, const std::string& extension,
+  const std::vector<std::string>& excludes = {}) {
   std::string result;
   DIR* dp = opendir(folder.c_str());
   if (dp != NULL)
@@ -133,8 +134,16 @@ std::string FindFileWithExtension(const std::string& folder, const std::string& 
     {
       std::string filename = ep->d_name;
       if (HasEnding(filename, extension)) {
-        result = folder + filename;
-        break;
+        bool exclusion_found = false;
+        for (const std::string& exclude : excludes) {
+          if (filename.find(exclude) != std::string::npos) {
+            exclusion_found = true;
+          }
+        }
+        if (!exclusion_found) {
+          result = folder + filename;
+          break;
+        }
       }
     }
     closedir(dp);
@@ -304,7 +313,8 @@ bool ProcessArgs(int argc, char** argv)
 
   if (!scorer) {
     const std::string language_folder = models_folder + language + "/";
-    static std::string scorer_string = FindFileWithExtension(language_folder, ".scorer");
+    static std::string scorer_string = FindFileWithExtension(language_folder, ".scorer",
+      { "command", "digits", "yesno" });
     if (scorer_string.length() == 0) {
       fprintf(stderr, "Warning: Scorer not found in %s\n", language_folder.c_str());
     }
