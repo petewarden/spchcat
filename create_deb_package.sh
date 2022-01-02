@@ -13,8 +13,8 @@ LIB_TMP_DIR=${BUILD_DIR}lib_tmp/
 LIB_DIR=${BUILD_DIR}lib/
 DEB_DIR=${BUILD_DIR}${NAME}_${VERSION}_${ARCH}/
 DEB_MODELS_DIR=${DEB_DIR}/etc/spchcat/models/
-DEB_LIB_DIR=${DEB_DIR}/usr/lib/
-DEB_BIN_DIR=${DEB_DIR}/usr/bin/
+DEB_LIB_DIR=${DEB_DIR}/usr/local/lib/
+DEB_BIN_DIR=${DEB_DIR}/usr/local/bin/
 DEB_DEBIAN_DIR=${DEB_DIR}DEBIAN/
 DEB_CONTROL_FILE=${DEB_DEBIAN_DIR}control
 

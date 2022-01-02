@@ -20,7 +20,7 @@ PLATFORM_EXE_SUFFIX := .exe
 endif
 
 SPCHCAT_BIN   := spchcat$(PLATFORM_EXE_SUFFIX)
-CFLAGS_STT    := -std=c++11 -o $(SPCHCAT_BIN) -g -O0
+CFLAGS_STT    := -std=c++11 -o $(SPCHCAT_BIN) -Os
 LINK_STT      := -lstt -lkenlm -ltflitedelegates -ltensorflowlite -lpulse -l pulse-simple
 LINK_PATH_STT := -L${TFDIR}/bazel-bin/native_client -L${TFDIR}/bazel-bin/tensorflow/lite
 
