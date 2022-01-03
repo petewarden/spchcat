@@ -10,7 +10,13 @@ It supports multiple languages thanks to [Coqui's library of models](https://git
 
 ## Installation
 
-On Debian-based x86 Linux systems like Ubuntu you should be able to install [the latest .deb package](https://github.com/petewarden/spchcat/releases/download/v0.0.1-alpha/spchcat_0.0-1_amd64.deb) by downloading and double-clicking it. Other platforms are currently unsupported.
+On Debian-based x86 Linux systems like Ubuntu you should be able to install [the latest .deb package](https://github.com/petewarden/spchcat/releases/download/v0.0.1-alpha/spchcat_0.0-1_amd64.deb) by downloading and double-clicking it. Other platforms are currently unsupported. You may need to install the `sox` audio tool library, by running something like:
+
+```bash
+sudo apt-get install sox
+```
+
+There's a notebook you can run in Colab at [notebooks/install.ipynb](https://github.com/petewarden/spchcat/blob/main/notebooks/install.ipynb) that shows all installation steps.
 
 ## Usage
 
@@ -137,17 +143,6 @@ You should replace `../STT_download` with the path to the Coqui library folder. 
 LD_LIBRARY_PATH=../STT_download ./spchcat
 ```
 
-```
-sudo docker run -it -v`pwd`:/spchcat ubuntu:xenial bash
-apt-get update && apt-get install -y sox libsox-dev libpulse-dev make gcc g++ wget
-cd /spchcat
-make clean && make spchcat LINK_PATH_STT=-Lbuild/lib EXTRA_CFLAGS_STT=-Ibuild/lib
-
-wget --quiet https://github.com/coqui-ai/STT/releases/download/v1.1.0/audio-1.1.0.tar.gz
-tar -xzf audio-1.1.0.tar.gz
-LD_LIBRARY_PATH=./build/lib ./spchcat --languages_dir=build/models/ ./audio/4507-16021-0012.wav
-```
-
 ### Models
 
 The previous step only built the executable binary itself, but for the complete tool you also need data files for each language. If you have the [`gh` GitHub command line tool](https://cli.github.com/) you can run the `download_releases.py` script to fetch [Coqui's releases](https://github.com/coqui-ai/STT-models/releases) into the `build/models` folder in your local repo. You can then run your locally-built tool against these models using the `--languages_dir` option:
@@ -159,6 +154,14 @@ LD_LIBRARY_PATH=../STT_download ./spchcat --languages_dir=build/models/
 ### Installer
 
 After you have the tool built and the model data downloaded, `create_deb_package.sh` will attempt to package them into a Debian installer archive. It will take several minutes to run, and the result ends up in `spchcat_0.0-1_amd64.deb`.
+
+### Release Process
+
+There's a notebook at [notebooks/build.pynb](https://github.com/petewarden/spchcat/blob/main/notebooks/build.ipynb) that runs through all the build steps needed to downloaded dependencies, data, build the executable, and create the final package. These steps are run inside an Ubuntu 18.04 Docker image to create [the binaries that are released](https://github.com/petewarden/spchcat/releases).
+
+```bash
+sudo docker run -it -v`pwd`:/spchcat ubuntu:bionic bash
+```
 
 ## Contributors
 
