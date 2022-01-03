@@ -4,7 +4,7 @@ NAME=spchcat
 VERSION=0.0-1
 ARCH=amd64
 MAINTAINER=pete@petewarden.com
-DESCRIPTION="Convert speech in audio to text transcripts."
+DESCRIPTION="Speech recognition tool to convert audio to text transcripts."
 
 BUILD_DIR=build/
 MODELS_DIR=${BUILD_DIR}models/
