@@ -1,7 +1,7 @@
 #!/bin/bash -xe
 
 NAME=spchcat
-VERSION=0.0-1
+VERSION=0.0-2
 ARCH=amd64
 MAINTAINER=pete@petewarden.com
 DESCRIPTION="Speech recognition tool to convert audio to text transcripts."
@@ -30,12 +30,8 @@ find ${DEB_MODELS_DIR} -type f -name "*.pb*" -delete
 # Some scorers are also very large, so for convenience remove them too.
 find ${DEB_MODELS_DIR} -iname "*.scorer" -size +150M -delete
 
-# Extract and copy the libraries from Coqui's binary release.
-rm -rf ${LIB_TMP_DIR} && mkdir -p ${LIB_TMP_DIR}
-wget -q ${LIB_URL} -O ${LIB_TMP_DIR}native_client.tflite.Linux.tar.xz
-unxz ${LIB_TMP_DIR}native_client.tflite.Linux.tar.xz
-rm -rf ${LIB_DIR}  && mkdir -p ${LIB_DIR}
-tar -xf ${LIB_TMP_DIR}native_client.tflite.Linux.tar --directory ${LIB_DIR}
+# Fetch the binary library release.
+scripts/download_libs.sh
 mkdir -p ${DEB_LIB_DIR}
 cp -r  --verbose ${LIB_DIR}*.so ${DEB_LIB_DIR}
 

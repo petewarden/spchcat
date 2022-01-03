@@ -4,7 +4,7 @@ import os
 
 os.system("mkdir -p build/models")
 
-with open('coqui_releases.csv') as csvfile:
+with open('scripts/coqui_releases.csv') as csvfile:
     reader = csv.reader(csvfile)
     for line_index, row in enumerate(reader):
         if line_index == 0:

@@ -137,6 +137,17 @@ You should replace `../STT_download` with the path to the Coqui library folder. 
 LD_LIBRARY_PATH=../STT_download ./spchcat
 ```
 
+```
+sudo docker run -it -v`pwd`:/spchcat ubuntu:xenial bash
+apt-get update && apt-get install -y sox libsox-dev libpulse-dev make gcc g++ wget
+cd /spchcat
+make clean && make spchcat LINK_PATH_STT=-Lbuild/lib EXTRA_CFLAGS_STT=-Ibuild/lib
+
+wget --quiet https://github.com/coqui-ai/STT/releases/download/v1.1.0/audio-1.1.0.tar.gz
+tar -xzf audio-1.1.0.tar.gz
+LD_LIBRARY_PATH=./build/lib ./spchcat --languages_dir=build/models/ ./audio/4507-16021-0012.wav
+```
+
 ### Models
 
 The previous step only built the executable binary itself, but for the complete tool you also need data files for each language. If you have the [`gh` GitHub command line tool](https://cli.github.com/) you can run the `download_releases.py` script to fetch [Coqui's releases](https://github.com/coqui-ai/STT-models/releases) into the `build/models` folder in your local repo. You can then run your locally-built tool against these models using the `--languages_dir` option:
