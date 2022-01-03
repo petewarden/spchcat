@@ -56,7 +56,6 @@ char* hot_words = NULL;
 
 const std::string ListAvailableLanguages() {
   std::string result;
-  fprintf(stderr, "Looking for '%s'\n", languages_dir.c_str());
   DIR* dp = opendir(languages_dir.c_str());
   if (dp != NULL)
   {
@@ -66,13 +65,10 @@ const std::string ListAvailableLanguages() {
       if (ep->d_name[0] == '.') {
         continue;
       }
-      if (result.length() == 0) {
-        result += ep->d_name;
+      if (result.length() != 0) {
+        result += ", ";
       }
-      else {
-        result += "|";
-        result += ep->d_name;
-      }
+      result += "'" + std::string(ep->d_name) + "'";
     }
     closedir(dp);
   }
@@ -82,11 +78,11 @@ const std::string ListAvailableLanguages() {
 void PrintHelp(const char* bin)
 {
   std::cout <<
-    "Usage: " << bin << " [--source mic|system|file] [--language " + ListAvailableLanguages() + "] <WAV files>\n"
+    "Usage: " << bin << " [--source mic|system|file] [--language <language code>] <WAV files>\n"
     "\n"
     "Speech recognition tool to convert audio to text transcripts.\n"
     "\n"
-    "\t--language\tWhich language to look for (default '" << language << "')\n"
+    "\t--language\tWhich language to look for (default '" << language << "', can be " << ListAvailableLanguages() << ")\n"
     "\t--source NAME\tName of the audio source (default 'mic', can also be 'system', 'file')\n"
     "\t--help\t\tShow help\n"
     "\nAdvanced settings:\n\n"
