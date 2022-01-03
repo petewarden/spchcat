@@ -10,7 +10,7 @@ It supports multiple languages thanks to [Coqui's library of models](https://git
 
 ## Installation
 
-On Debian-based x86 Linux systems like Ubuntu you should be able to install [the latest .deb package]() by downloading and double-clicking it. Other platforms are currently unsupported.
+On Debian-based x86 Linux systems like Ubuntu you should be able to install [the latest .deb package](https://github.com/petewarden/spchcat/releases/download/v0.0.1-alpha/spchcat_0.0-1_amd64.deb) by downloading and double-clicking it. Other platforms are currently unsupported.
 
 ## Usage
 
