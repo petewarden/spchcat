@@ -4,13 +4,13 @@ Speech recognition tool to convert audio to text transcripts.
 
 ## Description
 
-`spchcat` is a command-line tool to read in audio from .WAV files, microphone, or system audio inputs and convert any speech found into text. It runs locally on your machine, with no web API calls or network activity, and is open source. It is built on top of [Coqui's speech to text library](https://github.com/coqui-ai/STT), [TensorFlow](https://www.tensorflow.org/), [KenLM](https://kheafield.com/code/kenlm/), and [data from Mozilla's Common Voice project](https://commonvoice.mozilla.org/).
+[`spchcat`](https://github.com/petewarden/spchcat) is a command-line tool to read in audio from .WAV files, microphone, or system audio inputs and convert any speech found into text. It runs locally on your machine, with no web API calls or network activity, and is open source. It is built on top of [Coqui's speech to text library](https://github.com/coqui-ai/STT), [TensorFlow](https://www.tensorflow.org/), [KenLM](https://kheafield.com/code/kenlm/), and [data from Mozilla's Common Voice project](https://commonvoice.mozilla.org/).
 
 It supports multiple languages thanks to [Coqui's library of models](https://github.com/coqui-ai/STT-models). The accuracy of the recognized text will vary widely depending on the language, since some have only small amounts of training data. You can help improve future models by [contributing your voice](https://commonvoice.mozilla.org/).
 
 ## Installation
 
-On Debian-based x86 Linux systems like Ubuntu you should be able to install [the latest .deb package](https://github.com/petewarden/spchcat/releases/download/v0.0.1-alpha/spchcat_0.0-1_amd64.deb) by downloading and double-clicking it. Other platforms are currently unsupported. You may need to install the `sox` audio tool library, by running something like:
+On Debian-based x86 Linux systems like Ubuntu you should be able to install [the latest .deb package](https://github.com/petewarden/spchcat/releases/download/v0.0.2-alpha/spchcat_0.0-2_amd64.deb) by downloading and double-clicking it. Other platforms are currently unsupported. You may need to install the `sox` audio tool library, by running something like:
 
 ```bash
 sudo apt-get install sox
