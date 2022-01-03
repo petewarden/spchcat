@@ -18,4 +18,3 @@ hosts:
         oauth_token: ${GH_TOKEN}
         user: ${GH_USERNAME}
 EOM
-gh auth login
