@@ -663,6 +663,9 @@ int TranscribeLiveSource(ModelState* ctx, const char* source_name)
     NULL, app_name, PA_STREAM_RECORD, device, "spchcat", &ss, NULL, NULL, &error)))
   {
     fprintf(stderr, __FILE__ ": pa_simple_new() failed: %s\n", pa_strerror(error));
+    fprintf(stderr, "You may see this error if no microphone or audio source is found.\n");
+    fprintf(stderr, "The command 'pactl list sources' will show which devices PulseAudio is aware of.\n");
+    fprintf(stderr, "You can use the contents of the 'Name:' field as the '--source' argument to specify one.\n");
     goto finish;
   }
 
