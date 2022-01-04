@@ -18,7 +18,7 @@ There's a notebook you can run in Colab at [notebooks/install.ipynb](https://git
 
 ### Raspberry Pi
 
-To install on a Raspberry Pi, download the [latest .deb installer package](https://github.com/petewarden/spchcat/releases/download/v0.0.2-alpha/spchcat_0.0-2_armhf.deb) and either double-click on it from the desktop, or run `dpkg -i ~/Downloads/spchcat_0.0-2_armhf.deb` from the terminal. This has version only been tested on the latest release of Raspbian, released October 30th 2021, and on a Raspberry Pi 4. It's expected to not work on Raspberry Pi 1's and 0's, due to their CPU architecture.
+To install on a Raspberry Pi, download the [latest .deb installer package](https://github.com/petewarden/spchcat/releases/download/v0.0.2-alpha/spchcat_0.0-2_armhf.deb) and either double-click on it from the desktop, or run `dpkg -i ~/Downloads/spchcat_0.0-2_armhf.deb` from the terminal. This version has only been tested on the latest release of Raspbian, released October 30th 2021, and on a Raspberry Pi 4. It's expected to fail on Raspberry Pi 1's and 0's, due to their CPU architecture.
 
 ## Usage
 
