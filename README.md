@@ -1,6 +1,6 @@
 # Spchcat
 
-Speech recognition tool to convert audio to text transcripts.
+Speech recognition tool to convert audio to text transcripts, for Linux and Raspberry Pi.
 
 ## Description
 
@@ -10,9 +10,15 @@ It supports multiple languages thanks to [Coqui's library of models](https://git
 
 ## Installation
 
-On Debian-based x86 Linux systems like Ubuntu you should be able to install [the latest .deb package](https://github.com/petewarden/spchcat/releases/download/v0.0.2-alpha/spchcat_0.0-2_amd64.deb) by downloading and double-clicking it. Other platforms are currently unsupported.
+### x86
+
+On Debian-based x86 Linux systems like Ubuntu you should be able to install [the latest .deb package](https://github.com/petewarden/spchcat/releases/download/v0.0.2-alpha/spchcat_0.0-2_amd64.deb) by downloading and double-clicking it. Other distributions are currently unsupported. The tool requires PulseAudio, which is already present on most desktop systems, but can be [installed manually](https://wiki.debian.org/PulseAudio).
 
 There's a notebook you can run in Colab at [notebooks/install.ipynb](https://github.com/petewarden/spchcat/blob/main/notebooks/install.ipynb) that shows all installation steps.
+
+### Raspberry Pi
+
+To install on a Raspberry Pi, download the [latest .deb installer package](https://github.com/petewarden/spchcat/releases/download/v0.0.2-alpha/spchcat_0.0-2_armhf.deb) and either double-click on it from the desktop, or run `dpkg -i ~/Downloads/spchcat_0.0-2_armhf.deb` from the terminal. This has version only been tested on the latest release of Raspbian, released October 30th 2021, and on a Raspberry Pi 4. It's expected to not work on Raspberry Pi 1's and 0's, due to their CPU architecture.
 
 ## Usage
 
