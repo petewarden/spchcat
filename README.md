@@ -4,7 +4,7 @@ Speech recognition tool to convert audio to text transcripts, for Linux and Rasp
 
 ## Description
 
-[`spchcat`](https://github.com/petewarden/spchcat) is a command-line tool to read in audio from .WAV files, microphone, or system audio inputs and convert any speech found into text. It runs locally on your machine, with no web API calls or network activity, and is open source. It is built on top of [Coqui's speech to text library](https://github.com/coqui-ai/STT), [TensorFlow](https://www.tensorflow.org/), [KenLM](https://kheafield.com/code/kenlm/), and [data from Mozilla's Common Voice project](https://commonvoice.mozilla.org/).
+[`spchcat`](https://github.com/petewarden/spchcat) is a command-line tool that reads in audio from .WAV files, a microphone, or system audio inputs and converts any speech found into text. It runs locally on your machine, with no web API calls or network activity, and is open source. It is built on top of [Coqui's speech to text library](https://github.com/coqui-ai/STT), [TensorFlow](https://www.tensorflow.org/), [KenLM](https://kheafield.com/code/kenlm/), and [data from Mozilla's Common Voice project](https://commonvoice.mozilla.org/).
 
 It supports multiple languages thanks to [Coqui's library of models](https://github.com/coqui-ai/STT-models). The accuracy of the recognized text will vary widely depending on the language, since some have only small amounts of training data. You can help improve future models by [contributing your voice](https://commonvoice.mozilla.org/).
 
