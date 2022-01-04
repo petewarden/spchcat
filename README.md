@@ -10,11 +10,7 @@ It supports multiple languages thanks to [Coqui's library of models](https://git
 
 ## Installation
 
-On Debian-based x86 Linux systems like Ubuntu you should be able to install [the latest .deb package](https://github.com/petewarden/spchcat/releases/download/v0.0.2-alpha/spchcat_0.0-2_amd64.deb) by downloading and double-clicking it. Other platforms are currently unsupported. You may need to install the `sox` audio tool library, by running something like:
-
-```bash
-sudo apt-get install sox
-```
+On Debian-based x86 Linux systems like Ubuntu you should be able to install [the latest .deb package](https://github.com/petewarden/spchcat/releases/download/v0.0.2-alpha/spchcat_0.0-2_amd64.deb) by downloading and double-clicking it. Other platforms are currently unsupported.
 
 There's a notebook you can run in Colab at [notebooks/install.ipynb](https://github.com/petewarden/spchcat/blob/main/notebooks/install.ipynb) that shows all installation steps.
 

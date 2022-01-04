@@ -33,7 +33,7 @@ find ${DEB_MODELS_DIR} -iname "*.scorer" -size +150M -delete
 # Fetch the binary library release.
 scripts/download_libs.sh
 mkdir -p ${DEB_LIB_DIR}
-cp -r  --verbose ${LIB_DIR}*.so ${DEB_LIB_DIR}
+cp -r  --verbose ${LIB_DIR}*.so* ${DEB_LIB_DIR}
 
 # Copy over the binary executable.
 mkdir -p ${DEB_BIN_DIR}
