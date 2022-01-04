@@ -18,8 +18,8 @@ default: $(SPCHCAT_BIN)
 clean:
 	rm -f spchcat
 
-$(SPCHCAT_BIN): spchcat.cc pa_list_devices.cc Makefile
-	$(CXX) $(CFLAGS) $(CFLAGS_STT) $(SOX_CFLAGS) pa_list_devices.cc spchcat.cc $(LDFLAGS) $(SOX_LDFLAGS)
+$(SPCHCAT_BIN): src/spchcat.cc src/pa_list_devices.cc Makefile
+	$(CXX) $(CFLAGS) $(CFLAGS_STT) $(SOX_CFLAGS) src/pa_list_devices.cc src/spchcat.cc $(LDFLAGS) $(SOX_LDFLAGS)
 ifeq ($(OS),Darwin)
 	install_name_tool -change bazel-out/local-opt/bin/native_client/libstt.so @rpath/libstt.so stt
 endif

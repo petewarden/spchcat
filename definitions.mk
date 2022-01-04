@@ -20,7 +20,7 @@ PLATFORM_EXE_SUFFIX := .exe
 endif
 
 SPCHCAT_BIN   := spchcat$(PLATFORM_EXE_SUFFIX)
-CFLAGS_STT    := -std=c++11 -o $(SPCHCAT_BIN) -Os
+CFLAGS_STT    := -std=c++11 -o $(SPCHCAT_BIN) -Os -Isrc/
 # Allow user-supplied flags (like include paths) from the command line.
 EXTRA_CFLAGS_STT :=
 CFLAGS_STT    += ${EXTRA_CFLAGS_STT}
