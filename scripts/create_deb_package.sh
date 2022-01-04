@@ -8,7 +8,7 @@ DESCRIPTION="Speech recognition tool to convert audio to text transcripts."
 ARCHITECTURE=`uname -m`
 if [[ ${ARCHITECTURE} = "armv7l" ]]
 then
-ARCH=armv7
+ARCH=armhf
 else
 ARCH=amd64
 fi
