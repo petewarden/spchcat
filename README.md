@@ -141,7 +141,7 @@ LD_LIBRARY_PATH=../STT_download ./spchcat
 
 ### Models
 
-The previous step only built the executable binary itself, but for the complete tool you also need data files for each language. If you have the [`gh` GitHub command line tool](https://cli.github.com/) you can run the `download_releases.py` script to fetch [Coqui's releases](https://github.com/coqui-ai/STT-models/releases) into the `build/models` folder in your local repo. You can then run your locally-built tool against these models using the `--languages_dir` option:
+The previous step only built the executable binary itself, but for the complete tool you also need data files for each language. If you have the [`gh` GitHub command line tool](https://cli.github.com/) you can run the `download_models.py` script to fetch [Coqui's releases](https://github.com/coqui-ai/STT-models/releases) into the `build/models` folder in your local repo. You can then run your locally-built tool against these models using the `--languages_dir` option:
 
 ```bash
 LD_LIBRARY_PATH=../STT_download ./spchcat --languages_dir=build/models/
@@ -149,7 +149,7 @@ LD_LIBRARY_PATH=../STT_download ./spchcat --languages_dir=build/models/
 
 ### Installer
 
-After you have the tool built and the model data downloaded, `create_deb_package.sh` will attempt to package them into a Debian installer archive. It will take several minutes to run, and the result ends up in `spchcat_0.0-1_amd64.deb`.
+After you have the tool built and the model data downloaded, `create_deb_package.sh` will attempt to package them into a Debian installer archive. It will take several minutes to run, and the result ends up in `spchcat_0.0-2_amd64.deb`.
 
 ### Release Process
 
