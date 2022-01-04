@@ -1,7 +1,15 @@
 #!/bin/bash -xe
 
 BUILD_DIR=build/
+
+ARCHITECTURE=`uname -m`
+
+if [[ ${ARCHITECTURE} = "armv7l" ]]
+then
+LIB_URL="https://github.com/coqui-ai/STT/releases/download/v1.1.0/native_client.tflite.linux.armv7.tar.xz"
+else
 LIB_URL="https://github.com/coqui-ai/STT/releases/download/v1.1.0/native_client.tflite.Linux.tar.xz"
+fi
 LIB_TMP_DIR=${BUILD_DIR}lib_tmp/
 LIB_DIR=${BUILD_DIR}lib/
 

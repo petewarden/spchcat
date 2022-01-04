@@ -2,14 +2,19 @@
 
 NAME=spchcat
 VERSION=0.0-2
-ARCH=amd64
 MAINTAINER=pete@petewarden.com
 DESCRIPTION="Speech recognition tool to convert audio to text transcripts."
 
+ARCHITECTURE=`uname -m`
+if [[ ${ARCHITECTURE} = "armv7l" ]]
+then
+ARCH=armv7
+else
+ARCH=amd64
+fi
+
 BUILD_DIR=build/
 MODELS_DIR=${BUILD_DIR}models/
-LIB_URL="https://github.com/coqui-ai/STT/releases/download/v1.1.0/native_client.tflite.Linux.tar.xz"
-LIB_TMP_DIR=${BUILD_DIR}lib_tmp/
 LIB_DIR=${BUILD_DIR}lib/
 DEB_DIR=${BUILD_DIR}${NAME}_${VERSION}_${ARCH}/
 DEB_MODELS_DIR=${DEB_DIR}/etc/spchcat/models/
