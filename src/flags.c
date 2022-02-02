@@ -92,6 +92,14 @@ static void Split(const char* input, char separator, const int max_splits,
   }
 }
 
+// Deallocates the memory allocated by the Split function.
+static void SplitFree(char** outputs, int outputs_length) {
+  for (int i = 0; i < outputs_length; ++i) {
+    free(outputs[i]);
+  }
+  free(outputs);
+}
+
 // Splits "--foo=bar" into "--foo", "bar", "-xyz" into "-x", "-y", "-z". This
 // makes it easier to parse the arguments. Also skips over the first argument,
 // since that just contains the application name.

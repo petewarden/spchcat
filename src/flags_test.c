@@ -62,6 +62,7 @@ void test_Split() {
   Split("nosepshere", ':', -1, &parts, &parts_length);
   TEST_INTEQ(1, parts_length);
   TEST_STREQ("nosepshere", parts[0]);
+  SplitFree(parts, parts_length);
 
   parts = NULL;
   parts_length = 0;
@@ -70,6 +71,7 @@ void test_Split() {
   TEST_STREQ("seps", parts[0]);
   TEST_STREQ("r", parts[1]);
   TEST_STREQ("us", parts[2]);
+  SplitFree(parts, parts_length);
 
   parts = NULL;
   parts_length = 0;
@@ -77,6 +79,7 @@ void test_Split() {
   TEST_INTEQ(2, parts_length);
   TEST_STREQ("too", parts[0]);
   TEST_STREQ("many-seps", parts[1]);
+  SplitFree(parts, parts_length);
 
   parts = NULL;
   parts_length = 0;
@@ -85,6 +88,7 @@ void test_Split() {
   TEST_STREQ("weird", parts[0]);
   TEST_STREQ("trailing", parts[1]);
   TEST_STREQ("sep", parts[2]);
+  SplitFree(parts, parts_length);
 }
 
 void test_NormalizeArgs() {
