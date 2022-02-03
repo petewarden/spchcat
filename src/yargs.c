@@ -295,6 +295,14 @@ bool yargs_init(const YargsFlag* flags, size_t flags_length,
 
   app_name = argv[0];
 
+  // If we're called multiple times, make sure we don't keep appending to the
+  // list of unnamed arguments.
+  if (unnamed_args != NULL) {
+    free(unnamed_args);
+    unnamed_args = NULL;
+  }
+  unnamed_args_length = 0;
+
   char** norm_argv;
   int norm_argc;
   NormalizeArgs(argv, argc, &norm_argv, &norm_argc);
@@ -529,6 +537,51 @@ bool yargs_load_from_file(const YargsFlag* flags, int flags_length,
 
 bool yargs_save_to_file(const YargsFlag* flags, int flags_length,
   const char* filename) {
+
+  FILE* file = fopen(filename, "w");
+  if (file == NULL) {
+    fprintf(stderr, "yargs_save_to_file: Couldn't write to file '%s'\n",
+      filename);
+    return false;
+  }
+
+  fprintf(file, "%s ", app_name);
+  for (int i = 0; i < flags_length; ++i) {
+    const YargsFlag* flag = &flags[i];
+    fprintf(file, "--%s ", flag->name);
+    switch (flag->type) {
+    case FT_BOOL: {
+      if (*(flag->bool_value)) {
+        fprintf(file, "true");
+      }
+      else {
+        fprintf(file, "false");
+      }
+    } break;
+    case FT_FLOAT: {
+      fprintf(file, "%f", *(flag->float_value));
+    } break;
+    case FT_INT32: {
+      fprintf(file, "%d", *(flag->int32_value));
+    } break;
+    case FT_STRING: {
+      fprintf(file, "%s", *(flag->string_value));
+    } break;
+    default: {
+      assert(false);
+      return false;
+    } break;
+    }
+    if (i < (flags_length - 1)) {
+      fprintf(file, " ");
+    }
+  }
+
+  for (int i = 0; i < unnamed_args_length; ++i) {
+    fprintf(file, " %s", unnamed_args[i]);
+  }
+
+  fclose(file);
   return true;
 }
 

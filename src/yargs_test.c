@@ -483,6 +483,48 @@ void test_yargs_load_from_file() {
   yargs_free();
 }
 
+void test_yargs_save_to_file() {
+  const char* some_name = "some_value";
+  int32_t no_short_name = 10;
+  bool some_other_name = false;
+  float float_arg = 23.0f;
+  YargsFlag test_flags[] = {
+    YARGS_STRING("some_name", "a", &some_name, "Some name."),
+    YARGS_INT32("no_short_name", NULL, &no_short_name, "No short name."),
+    YARGS_BOOL("some_other_name", "b", &some_other_name, "Some other name."),
+    YARGS_FLOAT("float_arg", "f", &float_arg, "Float argument"),
+  };
+  const int test_flags_length = sizeof(test_flags) / sizeof(test_flags[0]);
+
+  char* argv1[] = {
+    "program", "--some_name", "new_value", "unnamed1", "--no_short_name=32",
+    "--some_other_name", "--float_arg", "-99.9", "unnamed2",
+  };
+  const int argc1 = sizeof(argv1) / sizeof(argv1[0]);
+  bool status = yargs_init(test_flags, test_flags_length, argv1, argc1);
+  TEST_CHECK(status);
+  const char* test_filename1 = "/tmp/yargs_test_file1.txt";
+  yargs_save_to_file(test_flags, test_flags_length, test_filename1);
+  yargs_free();
+
+  some_name = "some_value";
+  no_short_name = 10;
+  some_other_name = false;
+  float_arg = 23.0f;
+
+  status = yargs_load_from_file(test_flags, test_flags_length,
+    test_filename1);
+  TEST_CHECK(status);
+  TEST_STREQ("new_value", some_name);
+  TEST_INTEQ(32, no_short_name);
+  TEST_CHECK(some_other_name);
+  TEST_FLTEQ(-99.9, float_arg, 0.0001f);
+  TEST_INTEQ(2, yargs_get_unnamed_length());
+  TEST_STREQ("unnamed1", yargs_get_unnamed(0));
+  TEST_STREQ("unnamed2", yargs_get_unnamed(1));
+  yargs_free();
+}
+
 TEST_LIST = {
   {"GetFlagWithName", test_GetFlagWithName},
   {"GetFlagWithShortName", test_GetFlagWithShortName},
@@ -494,5 +536,6 @@ TEST_LIST = {
   {"yargs_init", test_yargs_init},
   {"LoadFileFromContents", test_LoadFileFromContents},
   {"yargs_load_from_file", test_yargs_load_from_file},
+  {"yargs_save_to_file", test_yargs_save_to_file},
   {NULL, NULL},
 };
