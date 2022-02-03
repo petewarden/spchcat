@@ -1,5 +1,5 @@
-#ifndef INCLUDE_FLAGS_H
-#define INCLUDE_FLAGS_H
+#ifndef INCLUDE_YARGS_H
+#define INCLUDE_YARGS_H
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -9,23 +9,23 @@
 extern "C" {
 #endif  // __CPLUSPLUS
 
-  typedef enum FlagTypeEnum {
+  typedef enum YargsFlagTypeEnum {
     FT_INT32 = 0,
     FT_FLOAT = 1,
     FT_BOOL = 2,
     FT_STRING = 3,
-  } FlagType;
+  } YargsFlagType;
 
-  typedef struct FlagDefinitionStruct {
+  typedef struct YargsFlagStruct {
     const char* name;
     const char* short_name;
-    FlagType type;
+    YargsFlagType type;
     bool* bool_value;
     float* float_value;
     int32_t* int32_value;
     const char** string_value;
     const char* description;
-  } FlagDefinition;
+  } YargsFlag;
 
   // Macros used to simplify adding flag entries.
 #define YARGS_BOOL(NAME, SHORT_NAME, VARIABLE_ADDR, DESCRIPTION) {\
@@ -40,20 +40,20 @@ extern "C" {
 #define YARGS_STRING(NAME, SHORT_NAME, VARIABLE_ADDR, DESCRIPTION) {\
   NAME, SHORT_NAME, FT_STRING, NULL, NULL, NULL, VARIABLE_ADDR, DESCRIPTION }
 
-  bool Flags_Init(const FlagDefinition* definitions, size_t definitions_length,
-    const char** argv, int argc);
-  void Flags_Free();
+  bool yargs_init(const YargsFlag* definitions, size_t definitions_length,
+    char** argv, int argc);
+  void yargs_free();
 
-  void Flags_PrintUsage();
+  void yargs_print_usage();
 
-  bool Flags_LoadFromIniFile(const FlagDefinition* flags, int flags_length, const char* filename);
-  bool Flags_SaveToIniFile(const FlagDefinition* flags, int flags_length, const char* filename);
+  bool yargs_load_from_file(const YargsFlag* flags, int flags_length, const char* filename);
+  bool yargs_save_to_file(const YargsFlag* flags, int flags_length, const char* filename);
 
-  int Flags_GetUnnamedLength();
-  const char* Flags_GetUnnamed(int index);
+  int yargs_get_unnamed_length();
+  const char* yargs_get_unnamed(int index);
 
 #ifdef __CPLUSPLUS
 }
 #endif  // __CPLUSPLUS
 
-#endif  // INCLUDE_FLAGS_H
+#endif  // INCLUDE_YARGS_H

@@ -1,4 +1,4 @@
-#include "flags.h"
+#include "yargs.h"
 
 #include <assert.h>
 #include <math.h>
@@ -8,6 +8,8 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+
+#include "termcolor-c.h"
 
 // Application name from argv[0], used for usage printout.
 static const char* app_name = NULL;
@@ -23,10 +25,10 @@ static void** free_at_end = NULL;
 static int free_at_end_length = 0;
 
 // Find a flag definition for this long name, or return NULL.
-static const FlagDefinition* GetFlagWithName(const FlagDefinition* flags,
+static const YargsFlag* GetFlagWithName(const YargsFlag* flags,
   int flags_length, const char* name) {
   for (int i = 0; i < flags_length; ++i) {
-    const FlagDefinition* flag = &flags[i];
+    const YargsFlag* flag = &flags[i];
     if (strcmp(flag->name, name) == 0) {
       return flag;
     }
@@ -37,10 +39,10 @@ static const FlagDefinition* GetFlagWithName(const FlagDefinition* flags,
 
 // Find a flag definition matching a single-character short name, or
 // return NULL.
-static const FlagDefinition* GetFlagWithShortName(const FlagDefinition* flags,
+static const YargsFlag* GetFlagWithShortName(const YargsFlag* flags,
   int flags_length, const char* short_name) {
   for (int i = 0; i < flags_length; ++i) {
-    const FlagDefinition* flag = &flags[i];
+    const YargsFlag* flag = &flags[i];
     if ((flag->short_name != NULL) &&
       (strcmp(flag->short_name, short_name) == 0)) {
       return flag;
@@ -100,7 +102,7 @@ static void SplitFree(char** outputs, int outputs_length) {
 // Splits "--foo=bar" into "--foo", "bar", "-xyz" into "-x", "-y", "-z". This
 // makes it easier to parse the arguments. Also skips over the first argument,
 // since that just contains the application name.
-static void NormalizeArgs(const char** argv, int argc, char*** norm_argv, int* norm_argc) {
+static void NormalizeArgs(char** argv, int argc, char*** norm_argv, int* norm_argc) {
   *norm_argv = NULL;
   *norm_argc = 0;
 
@@ -120,16 +122,33 @@ static void NormalizeArgs(const char** argv, int argc, char*** norm_argv, int* n
     else if ((arg[0] == '-') &&
       (strlen(arg) > 1) && // Ignore single dashes.
       ((arg[1] < '0') || (arg[1] > '9'))) { // Ignore negative numbers.
-      const char* short_opts = &(arg[1]);
-      const int short_opts_length = strlen(short_opts);
-      for (int j = 0; j < short_opts_length; ++j) {
-        char* short_opt = malloc(3);
-        short_opt[0] = '-';
-        short_opt[1] = short_opts[j];
-        short_opt[2] = 0;
-        *norm_argc += 1;
-        *norm_argv = realloc(*norm_argv, sizeof(const char*) * (*norm_argc));
-        (*norm_argv)[(*norm_argc) - 1] = short_opt;
+
+      char** opt_parts = NULL;
+      int opt_parts_length = 0;
+      Split(arg, '=', 2, &opt_parts, &opt_parts_length);
+      if (opt_parts_length > 1) {
+        // If there's an '=', assume there's only a single short name specified
+        // and break the arg into the name and the value.
+        for (int j = 0; j < opt_parts_length; ++j) {
+          *norm_argc += 1;
+          *norm_argv = realloc(*norm_argv, sizeof(const char*) * (*norm_argc));
+          (*norm_argv)[(*norm_argc) - 1] = opt_parts[j];
+        }
+        free(opt_parts);
+      }
+      else {
+        SplitFree(opt_parts, opt_parts_length);
+        const char* short_opts = &(arg[1]);
+        const int short_opts_length = strlen(short_opts);
+        for (int j = 0; j < short_opts_length; ++j) {
+          char* short_opt = malloc(3);
+          short_opt[0] = '-';
+          short_opt[1] = short_opts[j];
+          short_opt[2] = 0;
+          *norm_argc += 1;
+          *norm_argv = realloc(*norm_argv, sizeof(const char*) * (*norm_argc));
+          (*norm_argv)[(*norm_argc) - 1] = short_opt;
+        }
       }
     }
     else {
@@ -182,9 +201,9 @@ static bool InterpretValueAsInt32(const char* string, int32_t* output) {
 
 // Perform checks on the input data supplied by the caller, to ensure there are
 // no obvious logical errors.
-static bool ValidateFlagDefinitions(const FlagDefinition* definitions, int definitions_length) {
+static bool ValidateYargsFlags(const YargsFlag* definitions, int definitions_length) {
   for (int i = 0; i < definitions_length; ++i) {
-    const FlagDefinition* flag = &definitions[i];
+    const YargsFlag* flag = &definitions[i];
     if ((flag->name == NULL)) {
       fprintf(stderr, "Missing name in flag definition #%d.\n", i);
       return false;
@@ -253,16 +272,24 @@ static off_t FileSize(const char* filename) {
   return -1;
 }
 
-static bool LoadFromIniFileContents(char* contents) {
+static bool LoadFromFileContents(const YargsFlag* flags, size_t flags_length,
+  const char* contents) {
 
-  return true;
+  char** argv = NULL;
+  int argc = 0;
+  Split(contents, ' ', -1, &argv, &argc);
+
+  const bool result = yargs_init(flags, flags_length, argv, argc);
+
+  SplitFree(argv, argc);
+  return result;
 }
 
-bool Flags_Init(const FlagDefinition* flags, size_t flags_length,
-  const char** argv, int argc) {
+bool yargs_init(const YargsFlag* flags, size_t flags_length,
+  char** argv, int argc) {
   assert(flags != NULL);
 
-  if (!ValidateFlagDefinitions(flags, flags_length)) {
+  if (!ValidateYargsFlags(flags, flags_length)) {
     return false;
   }
 
@@ -284,7 +311,7 @@ bool Flags_Init(const FlagDefinition* flags, size_t flags_length,
     if ((arg[0] == '-') &&
       (strlen(arg) > 1) &&  // Skip single dashes.
       ((arg[1] < '0') || (arg[1] > '9'))) { // Skip negative numbers.
-      const FlagDefinition* flag = NULL;
+      const YargsFlag* flag = NULL;
       if (arg[1] == '-') {
         flag = GetFlagWithName(flags, flags_length, &arg[2]);
       }
@@ -293,7 +320,8 @@ bool Flags_Init(const FlagDefinition* flags, size_t flags_length,
       }
       if (flag == NULL) {
         fprintf(stderr, "Flag '%s' not recognized.\n", arg);
-        Flags_PrintUsage(flags, flags_length);
+        yargs_print_usage(flags, flags_length);
+        FreeNormalizedArgs(norm_argv, norm_argc);
         return false;
       }
       switch (flag->type) {
@@ -326,6 +354,7 @@ bool Flags_Init(const FlagDefinition* flags, size_t flags_length,
         else {
           fprintf(stderr, "Boolean value for argument '%s' is '%s', but needs to be one of "
             "true, false, yes, no, 1, or 0\n", flag->name, next_value);
+          FreeNormalizedArgs(norm_argv, norm_argc);
           return false;
         }
       } break;
@@ -333,12 +362,14 @@ bool Flags_Init(const FlagDefinition* flags, size_t flags_length,
       case FT_FLOAT: {
         if (next_value == NULL) {
           fprintf(stderr, "No value found for argument '%s'\n", flag->name);
+          FreeNormalizedArgs(norm_argv, norm_argc);
           return false;
         }
 
         if (!InterpretValueAsFloat(next_value, flag->float_value)) {
           fprintf(stderr, "Couldn't interpret '%s' as a floating point number for argument '%s'\n",
             next_value, flag->name);
+          FreeNormalizedArgs(norm_argv, norm_argc);
           return false;
         }
       } break;
@@ -346,11 +377,13 @@ bool Flags_Init(const FlagDefinition* flags, size_t flags_length,
       case FT_INT32: {
         if (next_value == NULL) {
           fprintf(stderr, "No value found for argument '%s'\n", flag->name);
+          FreeNormalizedArgs(norm_argv, norm_argc);
           return false;
         }
         if (!InterpretValueAsInt32(next_value, flag->int32_value)) {
           fprintf(stderr, "Couldn't interpret '%s' as an integer for argument '%s'\n",
             next_value, flag->name);
+          FreeNormalizedArgs(norm_argv, norm_argc);
           return false;
         }
       } break;
@@ -358,6 +391,7 @@ bool Flags_Init(const FlagDefinition* flags, size_t flags_length,
       case FT_STRING: {
         if (next_value == NULL) {
           fprintf(stderr, "No value found for argument '%s'\n", flag->name);
+          FreeNormalizedArgs(norm_argv, norm_argc);
           return false;
         }
         const int next_value_length = strlen(next_value);
@@ -369,6 +403,7 @@ bool Flags_Init(const FlagDefinition* flags, size_t flags_length,
 
       default: {
         fprintf(stderr, "Unknown type %d in definition for flag '%s'\n", flag->type, flag->name);
+        FreeNormalizedArgs(norm_argv, norm_argc);
         return false;
       }
       }
@@ -392,23 +427,41 @@ bool Flags_Init(const FlagDefinition* flags, size_t flags_length,
   }
 
   FreeNormalizedArgs(norm_argv, norm_argc);
-
   return true;
 }
 
-void Flags_Free() {
+void yargs_free() {
   for (int i = 0; i < free_at_end_length; ++i) {
     free(free_at_end[i]);
   }
   free(free_at_end);
   free_at_end = NULL;
+  free_at_end_length = 0;
+
+  free(unnamed_args);
+  unnamed_args = NULL;
+  unnamed_args_length = 0;
 }
 
-void Flags_PrintUsage(const FlagDefinition* flags, int flags_length) {
-  fprintf(stderr, "Usage: %s ", app_name);
+void yargs_print_usage(const YargsFlag* flags, int flags_length) {
+  text_bold(stderr);
+  fprintf(stderr, "Usage");
+  reset_colors(stderr);
+  text_red(stderr);
+  fprintf(stderr, ": %s ", app_name);
+  reset_colors(stderr);
   for (int i = 0; i < flags_length; ++i) {
-    const FlagDefinition* flag = &flags[i];
-    fprintf(stderr, "--%s/-%s ", flag->name, flag->short_name);
+    const YargsFlag* flag = &flags[i];
+    text_green(stderr);
+    fprintf(stderr, "--%s", flag->name);
+    reset_colors(stderr);
+    if (flag->short_name != NULL) {
+      fprintf(stderr, "/");
+      text_green(stderr);
+      fprintf(stderr, "-%s", flag->short_name);
+      reset_colors(stderr);
+    }
+    fprintf(stderr, " ");
     switch (flag->type) {
     case FT_BOOL: {
       // Do nothing.
@@ -428,9 +481,28 @@ void Flags_PrintUsage(const FlagDefinition* flags, int flags_length) {
     }
   }
   fprintf(stderr, "\n");
+  for (int i = 0; i < flags_length; ++i) {
+    const YargsFlag* flag = &flags[i];
+    text_green(stderr);
+    fprintf(stderr, "--%s", flag->name);
+    reset_colors(stderr);
+    if (flag->short_name != NULL) {
+      fprintf(stderr, "/");
+      text_green(stderr);
+      fprintf(stderr, "-%s", flag->short_name);
+      reset_colors(stderr);
+    }
+    fprintf(stderr, "\t");
+    if (flag->description != NULL) {
+      text_cyan(stderr);
+      fprintf(stderr, "%s\n", flag->description);
+      reset_colors(stderr);
+    }
+  }
 }
 
-bool Flags_LoadFromIniFile(const FlagDefinition* flags, int flags_length, const char* filename) {
+bool yargs_load_from_file(const YargsFlag* flags, int flags_length,
+  const char* filename) {
   FILE* file = fopen(filename, "r");
   if (file == NULL) {
     fprintf(stderr, "Flags_LoadFromIniFile(): Couldn't load file '%s'\n",
@@ -445,24 +517,26 @@ bool Flags_LoadFromIniFile(const FlagDefinition* flags, int flags_length, const 
     return false;
   }
 
-  char* file_contents = malloc(file_size);
+  char* file_contents = malloc(file_size + 1);
   fread(file_contents, 1, file_size, file);
-  const bool result = LoadFromIniFileContents(file_contents);
+  file_contents[file_size] = 0;
+  const bool result = LoadFromFileContents(flags, flags_length,
+    file_contents);
   free(file_contents);
 
   return result;
 }
 
-bool Flags_SaveToIniFile(const FlagDefinition* flags, int flags_length,
+bool yargs_save_to_file(const YargsFlag* flags, int flags_length,
   const char* filename) {
   return true;
 }
 
-int Flags_GetUnnamedLength() {
+int yargs_get_unnamed_length() {
   return unnamed_args_length;
 }
 
-const char* Flags_GetUnnamed(int index) {
+const char* yargs_get_unnamed(int index) {
   if ((index < 0) || (index >= unnamed_args_length)) {
     return NULL;
   }
