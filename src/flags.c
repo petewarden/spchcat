@@ -9,11 +9,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-// Will point to our mutable copy of the flags, which contains the values
-// after parsing the command line.
-static FlagDefinition* flags = NULL;
-static int flags_length = 0;
-
 // Application name from argv[0], used for usage printout.
 static const char* app_name = NULL;
 
@@ -28,9 +23,10 @@ static void** free_at_end = NULL;
 static int free_at_end_length = 0;
 
 // Find a flag definition for this long name, or return NULL.
-static FlagDefinition* GetFlagWithName(const char* name) {
+static const FlagDefinition* GetFlagWithName(const FlagDefinition* flags,
+  int flags_length, const char* name) {
   for (int i = 0; i < flags_length; ++i) {
-    FlagDefinition* flag = &flags[i];
+    const FlagDefinition* flag = &flags[i];
     if (strcmp(flag->name, name) == 0) {
       return flag;
     }
@@ -41,9 +37,10 @@ static FlagDefinition* GetFlagWithName(const char* name) {
 
 // Find a flag definition matching a single-character short name, or
 // return NULL.
-static FlagDefinition* GetFlagWithShortName(const char* short_name) {
+static const FlagDefinition* GetFlagWithShortName(const FlagDefinition* flags,
+  int flags_length, const char* short_name) {
   for (int i = 0; i < flags_length; ++i) {
-    FlagDefinition* flag = &flags[i];
+    const FlagDefinition* flag = &flags[i];
     if ((flag->short_name != NULL) &&
       (strcmp(flag->short_name, short_name) == 0)) {
       return flag;
@@ -53,7 +50,7 @@ static FlagDefinition* GetFlagWithShortName(const char* short_name) {
 }
 
 // Splits a string into multiple parts, based on the single-character separator.
-// The `max_splits` arguments controls the maximum number of  parts that will be
+// The `max_splits` arguments controls the maximum number of parts that will be
 // produced, or -1 for no maximum. The caller is responsible for calling free() 
 // on the `outputs` array, and for all of the entries in that array.
 static void Split(const char* input, char separator, const int max_splits,
@@ -201,13 +198,40 @@ static bool ValidateFlagDefinitions(const FlagDefinition* definitions, int defin
         flag->short_name, flag->name, i);
       return false;
     }
-    if ((flag->type != FT_BOOL) &&
-      (flag->type != FT_FLOAT) &&
-      (flag->type != FT_INT32) &&
-      (flag->type != FT_STRING)) {
+    switch (flag->type) {
+    case FT_BOOL: {
+      if (flag->bool_value == NULL) {
+        fprintf(stderr, "Missing bool value for flag definition '%s' (#%d).\n",
+          flag->name, i);
+        return false;
+      }
+    } break;
+    case FT_FLOAT: {
+      if (flag->float_value == NULL) {
+        fprintf(stderr, "Missing float value for flag definition '%s' (#%d).\n",
+          flag->name, i);
+        return false;
+      }
+    } break;
+    case FT_INT32: {
+      if (flag->int32_value == NULL) {
+        fprintf(stderr, "Missing integer value for flag definition '%s' (#%d).\n",
+          flag->name, i);
+        return false;
+      }
+    } break;
+    case FT_STRING: {
+      if (flag->string_value == NULL) {
+        fprintf(stderr, "Missing string value for flag definition '%s' (#%d).\n",
+          flag->name, i);
+        return false;
+      }
+    } break;
+    default: {
       fprintf(stderr, "Bad type %d in flag definition '%s' (#%d).\n",
         flag->type, flag->name, i);
       return false;
+    } break;
     }
   }
   return true;
@@ -219,6 +243,9 @@ static void AddToFreeAtEndList(void* ptr) {
   free_at_end[free_at_end_length - 1] = ptr;
 }
 
+// Hopefully-portable way of getting the size of a file (see endless 
+// StackOverflow threads for why fseek/ftell isn't guaranteed to work on binary
+// files).
 static off_t FileSize(const char* filename) {
   struct stat st;
   if (stat(filename, &st) == 0)
@@ -231,23 +258,13 @@ static bool LoadFromIniFileContents(char* contents) {
   return true;
 }
 
-bool Flags_Init(const FlagDefinition* definitions, size_t definitions_length,
+bool Flags_Init(const FlagDefinition* flags, size_t flags_length,
   const char** argv, int argc) {
-  assert(definitions != NULL);
+  assert(flags != NULL);
 
-  if (flags != NULL) {
-    fprintf(stderr, "Flags_Init() called twice, can only be called once.\n");
+  if (!ValidateFlagDefinitions(flags, flags_length)) {
     return false;
   }
-
-  if (!ValidateFlagDefinitions(definitions, definitions_length)) {
-    return false;
-  }
-
-  const size_t flags_byte_count = sizeof(FlagDefinition) * definitions_length;
-  flags = malloc(flags_byte_count);
-  memcpy(flags, definitions, flags_byte_count);
-  flags_length = definitions_length;
 
   app_name = argv[0];
 
@@ -267,28 +284,28 @@ bool Flags_Init(const FlagDefinition* definitions, size_t definitions_length,
     if ((arg[0] == '-') &&
       (strlen(arg) > 1) &&  // Skip single dashes.
       ((arg[1] < '0') || (arg[1] > '9'))) { // Skip negative numbers.
-      FlagDefinition* flag = NULL;
+      const FlagDefinition* flag = NULL;
       if (arg[1] == '-') {
-        flag = GetFlagWithName(&arg[2]);
+        flag = GetFlagWithName(flags, flags_length, &arg[2]);
       }
       else {
-        flag = GetFlagWithShortName(&arg[1]);
+        flag = GetFlagWithShortName(flags, flags_length, &arg[1]);
       }
       if (flag == NULL) {
         fprintf(stderr, "Flag '%s' not recognized.\n", arg);
-        Flags_PrintUsage();
+        Flags_PrintUsage(flags, flags_length);
         return false;
       }
       switch (flag->type) {
       case FT_BOOL: {
         if (next_value == NULL) {
-          flag->bool_value = true;
+          *(flag->bool_value) = true;
         }
         else if (next_value[0] == '-') {
           // If the next arg is an option name, don't try to intepret it
           // as a value.
           consume_next_value = false;
-          flag->bool_value = true;
+          *(flag->bool_value) = true;
         }
         else if (
           (strcmp(next_value, "true") == 0) ||
@@ -296,7 +313,7 @@ bool Flags_Init(const FlagDefinition* definitions, size_t definitions_length,
           (strcmp(next_value, "yes") == 0) ||
           (strcmp(next_value, "YES") == 0) ||
           (strcmp(next_value, "1") == 0)) {
-          flag->bool_value = true;
+          *(flag->bool_value) = true;
         }
         else if (
           (strcmp(next_value, "false") == 0) ||
@@ -304,7 +321,7 @@ bool Flags_Init(const FlagDefinition* definitions, size_t definitions_length,
           (strcmp(next_value, "no") == 0) ||
           (strcmp(next_value, "NO") == 0) ||
           (strcmp(next_value, "0") == 0)) {
-          flag->bool_value = true;
+          *(flag->bool_value) = true;
         }
         else {
           fprintf(stderr, "Boolean value for argument '%s' is '%s', but needs to be one of "
@@ -319,7 +336,7 @@ bool Flags_Init(const FlagDefinition* definitions, size_t definitions_length,
           return false;
         }
 
-        if (!InterpretValueAsFloat(next_value, &flag->float_value)) {
+        if (!InterpretValueAsFloat(next_value, flag->float_value)) {
           fprintf(stderr, "Couldn't interpret '%s' as a floating point number for argument '%s'\n",
             next_value, flag->name);
           return false;
@@ -331,7 +348,7 @@ bool Flags_Init(const FlagDefinition* definitions, size_t definitions_length,
           fprintf(stderr, "No value found for argument '%s'\n", flag->name);
           return false;
         }
-        if (!InterpretValueAsInt32(next_value, &flag->int32_value)) {
+        if (!InterpretValueAsInt32(next_value, flag->int32_value)) {
           fprintf(stderr, "Couldn't interpret '%s' as an integer for argument '%s'\n",
             next_value, flag->name);
           return false;
@@ -347,7 +364,7 @@ bool Flags_Init(const FlagDefinition* definitions, size_t definitions_length,
         char* next_string = malloc(next_value_length + 1);
         AddToFreeAtEndList(next_string);
         strcpy(next_string, next_value);
-        flag->string_value = next_string;
+        *(flag->string_value) = next_string;
       } break;
 
       default: {
@@ -375,11 +392,11 @@ bool Flags_Init(const FlagDefinition* definitions, size_t definitions_length,
   }
 
   FreeNormalizedArgs(norm_argv, norm_argc);
+
+  return true;
 }
 
 void Flags_Free() {
-  free(flags);
-  flags = NULL;
   for (int i = 0; i < free_at_end_length; ++i) {
     free(free_at_end[i]);
   }
@@ -387,10 +404,10 @@ void Flags_Free() {
   free_at_end = NULL;
 }
 
-void Flags_PrintUsage() {
+void Flags_PrintUsage(const FlagDefinition* flags, int flags_length) {
   fprintf(stderr, "Usage: %s ", app_name);
   for (int i = 0; i < flags_length; ++i) {
-    FlagDefinition* flag = &flags[i];
+    const FlagDefinition* flag = &flags[i];
     fprintf(stderr, "--%s/-%s ", flag->name, flag->short_name);
     switch (flag->type) {
     case FT_BOOL: {
@@ -413,7 +430,7 @@ void Flags_PrintUsage() {
   fprintf(stderr, "\n");
 }
 
-bool Flags_LoadFromIniFile(const char* filename) {
+bool Flags_LoadFromIniFile(const FlagDefinition* flags, int flags_length, const char* filename) {
   FILE* file = fopen(filename, "r");
   if (file == NULL) {
     fprintf(stderr, "Flags_LoadFromIniFile(): Couldn't load file '%s'\n",
@@ -436,71 +453,8 @@ bool Flags_LoadFromIniFile(const char* filename) {
   return result;
 }
 
-bool Flags_SaveToIniFile(const char* filename) {
-  return true;
-}
-
-bool Flags_GetInt32(const char* name, int32_t* output) {
-  FlagDefinition* flag = GetFlagWithName(name);
-  if (flag == NULL) {
-    fprintf(stderr, "Flag_GetInt32() flag '%s' not found.\n", name);
-    *output = 0;
-    return false;
-  }
-  if (flag->type != FT_INT32) {
-    fprintf(stderr, "Flag_GetInt32() called for '%s' with wrong type.\n", name);
-    *output = 0;
-    return false;
-  }
-  *output = flag->int32_value;
-  return true;
-}
-
-bool Flags_GetFloat(const char* name, float* output) {
-  FlagDefinition* flag = GetFlagWithName(name);
-  if (flag == NULL) {
-    fprintf(stderr, "Flag_GetFloat() flag '%s' not found.\n", name);
-    *output = 0.0f;
-    return false;
-  }
-  if (flag->type != FT_FLOAT) {
-    fprintf(stderr, "Flag_GetFloat() called for '%s' with wrong type.\n", name);
-    *output = 0.0f;
-    return false;
-  }
-  *output = flag->float_value;
-  return true;
-}
-
-bool Flags_GetBool(const char* name, bool* output) {
-  FlagDefinition* flag = GetFlagWithName(name);
-  if (flag == NULL) {
-    fprintf(stderr, "Flag_GetBool() flag '%s' not found.\n", name);
-    *output = false;
-    return false;
-  }
-  if (flag->type != FT_BOOL) {
-    fprintf(stderr, "Flag_GetBool() called for '%s' with wrong type.\n", name);
-    *output = false;
-    return false;
-  }
-  *output = flag->bool_value;
-  return true;
-}
-
-bool Flags_GetString(const char* name, const char** output) {
-  FlagDefinition* flag = GetFlagWithName(name);
-  if (flag == NULL) {
-    fprintf(stderr, "Flag_GetString() flag '%s' not found.\n", name);
-    *output = "";
-    return false;
-  }
-  if (flag->type != FT_STRING) {
-    fprintf(stderr, "Flag_GetString) called for '%s' with wrong type.\n", name);
-    *output = "";
-    return false;
-  }
-  *output = flag->string_value;
+bool Flags_SaveToIniFile(const FlagDefinition* flags, int flags_length,
+  const char* filename) {
   return true;
 }
 

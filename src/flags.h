@@ -20,11 +20,25 @@ extern "C" {
     const char* name;
     const char* short_name;
     FlagType type;
-    int32_t int32_value;
-    float float_value;
-    bool bool_value;
-    const char* string_value;
+    bool* bool_value;
+    float* float_value;
+    int32_t* int32_value;
+    const char** string_value;
+    const char* description;
   } FlagDefinition;
+
+  // Macros used to simplify adding flag entries.
+#define YARGS_BOOL(NAME, SHORT_NAME, VARIABLE_ADDR, DESCRIPTION) {\
+  NAME, SHORT_NAME, FT_BOOL, VARIABLE_ADDR, NULL, NULL, NULL, DESCRIPTION }
+
+#define YARGS_FLOAT(NAME, SHORT_NAME, VARIABLE_ADDR, DESCRIPTION) {\
+  NAME, SHORT_NAME, FT_FLOAT, NULL, VARIABLE_ADDR, NULL, NULL, DESCRIPTION }
+
+#define YARGS_INT32(NAME, SHORT_NAME, VARIABLE_ADDR, DESCRIPTION) {\
+  NAME, SHORT_NAME, FT_INT32, NULL, NULL, VARIABLE_ADDR, NULL, DESCRIPTION }
+
+#define YARGS_STRING(NAME, SHORT_NAME, VARIABLE_ADDR, DESCRIPTION) {\
+  NAME, SHORT_NAME, FT_STRING, NULL, NULL, NULL, VARIABLE_ADDR, DESCRIPTION }
 
   bool Flags_Init(const FlagDefinition* definitions, size_t definitions_length,
     const char** argv, int argc);
@@ -32,13 +46,8 @@ extern "C" {
 
   void Flags_PrintUsage();
 
-  bool Flags_LoadFromIniFile(const char* filename);
-  bool Flags_SaveToIniFile(const char* filename);
-
-  bool Flags_GetInt32(const char* name, int32_t* output);
-  bool Flags_GetFloat(const char* name, float* output);
-  bool Flags_GetBool(const char* name, bool* output);
-  bool Flags_GetString(const char* name, const char** output);
+  bool Flags_LoadFromIniFile(const FlagDefinition* flags, int flags_length, const char* filename);
+  bool Flags_SaveToIniFile(const FlagDefinition* flags, int flags_length, const char* filename);
 
   int Flags_GetUnnamedLength();
   const char* Flags_GetUnnamed(int index);

@@ -6,54 +6,55 @@
 #include "flags.c"
 
 void test_GetFlagWithName() {
-  FlagDefinition test_flags[] = {
-    {"some_name", NULL, FT_STRING, 0, 0.0f, false, "some_value"},
-    {"some_other_name", NULL, FT_INT32, 10, 0.0f, false, NULL},
+  const char* some_name = "some_value";
+  int32_t some_other_name = 10;
+  const FlagDefinition test_flags[] = {
+    YARGS_STRING("some_name", NULL, &some_name, "Test value."),
+    YARGS_INT32("some_other_name", NULL, &some_other_name, "Another test."),
   };
-  flags = test_flags;
-  flags_length = sizeof(test_flags) / sizeof(test_flags[0]);
+  const int test_flags_length = sizeof(test_flags) / sizeof(test_flags[0]);
 
-  FlagDefinition* result = GetFlagWithName("some_name");
+  const FlagDefinition* result = GetFlagWithName(test_flags, test_flags_length,
+    "some_name");
   TEST_ASSERT(result != NULL);
   TEST_STREQ("some_name", result->name);
-  TEST_STREQ("some_value", result->string_value);
+  TEST_STREQ("some_value", *(result->string_value));
 
-  result = GetFlagWithName("some_other_name");
+  result = GetFlagWithName(test_flags, test_flags_length, "some_other_name");
   TEST_ASSERT(result != NULL);
   TEST_STREQ("some_other_name", result->name);
-  TEST_INTEQ(10, result->int32_value);
+  TEST_INTEQ(10, *(result->int32_value));
 
-  result = GetFlagWithName("nonexistent");
+  result = GetFlagWithName(test_flags, test_flags_length, "nonexistent");
   TEST_CHECK(result == NULL);
-
-  flags = NULL;
 }
 
 void test_GetFlagWithShortName() {
-  FlagDefinition test_flags[] = {
-    {"some_name", "a", FT_STRING, 0, 0.0f, false, "some_value"},
-    {"no_short_name", NULL, FT_INT32, 10, 0.0f, false, NULL},
-    {"some_other_name", "b", FT_INT32, 10, 0.0f, false, NULL},
+  const char* some_name = "some_value";
+  int32_t no_short_name = 10;
+  int32_t some_other_name = 10;
+  const FlagDefinition test_flags[] = {
+    YARGS_STRING("some_name", "a", &some_name, "Test value."),
+    YARGS_INT32("no_short_name", NULL, &no_short_name, "No short name."),
+    YARGS_INT32("some_other_name", "b", &some_other_name, "Another test."),
   };
-  flags = test_flags;
-  flags_length = sizeof(test_flags) / sizeof(test_flags[0]);
+  const int test_flags_length = sizeof(test_flags) / sizeof(test_flags[0]);
 
-  FlagDefinition* result = GetFlagWithShortName("a");
+  const FlagDefinition* result = GetFlagWithShortName(test_flags, test_flags_length,
+    "a");
   TEST_ASSERT(result != NULL);
   TEST_STREQ("some_name", result->name);
   TEST_STREQ("a", result->short_name);
-  TEST_STREQ("some_value", result->string_value);
+  TEST_STREQ("some_value", *(result->string_value));
 
-  result = GetFlagWithShortName("b");
+  result = GetFlagWithShortName(test_flags, test_flags_length, "b");
   TEST_ASSERT(result != NULL);
   TEST_STREQ("some_other_name", result->name);
   TEST_STREQ("b", result->short_name);
-  TEST_INTEQ(10, result->int32_value);
+  TEST_INTEQ(10, *(result->int32_value));
 
-  result = GetFlagWithShortName("z");
+  result = GetFlagWithShortName(test_flags, test_flags_length, "z");
   TEST_CHECK(result == NULL);
-
-  flags = NULL;
 }
 
 void test_Split() {
@@ -173,29 +174,49 @@ void test_InterpretValueAsInt32() {
 }
 
 void test_ValidateFlagDefinitions() {
-  FlagDefinition good_flags[] = {
-    {"some_name", NULL, FT_STRING, 0, 0.0f, false, "some_value"},
-    {"some_other_name", NULL, FT_INT32, 10, 0.0f, false, NULL},
+  const char* some_name = "some_value";
+  int32_t some_other_name = 0;
+  const FlagDefinition good_flags[] = {
+    YARGS_STRING("some_name", NULL, &some_name, "Test value."),
+    YARGS_INT32("some_other_name", NULL, &some_other_name, "Another test."),
   };
   bool result = ValidateFlagDefinitions(&good_flags[0],
     sizeof(good_flags) / sizeof(good_flags[0]));
   TEST_CHECK(result);
 
-  FlagDefinition bad_flags[] = {
-    {"some_name", NULL, -1, 0, 0.0f, false, "some_value"},
-    {"some_other_name", NULL, FT_INT32, 10, 0.0f, false, NULL},
+  const FlagDefinition bad_type_flags[] = {
+    {"some_name", NULL, -1, NULL, NULL, NULL, NULL, "Bad type."},
   };
-  result = ValidateFlagDefinitions(&bad_flags[0],
-    sizeof(bad_flags) / sizeof(bad_flags[0]));
+  result = ValidateFlagDefinitions(&bad_type_flags[0],
+    sizeof(bad_type_flags) / sizeof(bad_type_flags[0]));
+  TEST_CHECK(!result);
+
+  const char* bad_name_string = "Bad name string";
+  const FlagDefinition bad_name_flags[] = {
+    {NULL, NULL, FT_STRING, NULL, NULL, NULL, &bad_name_string, "Bad name."},
+  };
+  result = ValidateFlagDefinitions(&bad_name_flags[0],
+    sizeof(bad_name_flags) / sizeof(bad_name_flags[0]));
+  TEST_CHECK(!result);
+
+  const FlagDefinition bad_ptr_flags[] = {
+    {NULL, NULL, FT_STRING, NULL, NULL, NULL, NULL, "Bad pointer."},
+  };
+  result = ValidateFlagDefinitions(&bad_ptr_flags[0],
+    sizeof(bad_ptr_flags) / sizeof(bad_ptr_flags[0]));
   TEST_CHECK(!result);
 }
 
 void test_Flags_Init() {
+  const char* some_name = "some_value";
+  int32_t no_short_name = 10;
+  bool some_other_name = false;
+  float float_arg = 23.0f;
   FlagDefinition test_flags[] = {
-    {"some_name", "a", FT_STRING, 0, 0.0f, false, "some_value"},
-    {"no_short_name", NULL, FT_INT32, 10, 0.0f, false, NULL},
-    {"some_other_name", "b", FT_BOOL, 10, 0.0f, false, NULL},
-    {"float_arg", "f", FT_FLOAT, 0, 23.0f, false, NULL},
+    YARGS_STRING("some_name", "a", &some_name, "Some name."),
+    YARGS_INT32("no_short_name", NULL, &no_short_name, "No short name."),
+    YARGS_BOOL("some_other_name", "b", &some_other_name, "Some other name."),
+    YARGS_FLOAT("float_arg", "f", &float_arg, "Float argument"),
   };
   const int test_flags_length = sizeof(test_flags) / sizeof(test_flags[0]);
 
@@ -206,26 +227,10 @@ void test_Flags_Init() {
   const int argc1 = sizeof(argv1) / sizeof(argv1[0]);
 
   Flags_Init(test_flags, test_flags_length, argv1, argc1);
-
-  const char* string_result;
-  bool status = Flags_GetString("some_name", &string_result);
-  TEST_CHECK(status);
-  TEST_STREQ("new_value", string_result);
-
-  int32_t int32_result;
-  status = Flags_GetInt32("no_short_name", &int32_result);
-  TEST_CHECK(status);
-  TEST_INTEQ(32, int32_result);
-
-  bool bool_result;
-  status = Flags_GetBool("some_other_name", &bool_result);
-  TEST_CHECK(status);
-  TEST_CHECK(bool_result);
-
-  float float_result;
-  status = Flags_GetFloat("float_arg", &float_result);
-  TEST_CHECK(status);
-  TEST_FLTEQ(-99.9, float_result, 0.0001f);
+  TEST_STREQ("new_value", some_name);
+  TEST_INTEQ(32, no_short_name);
+  TEST_CHECK(some_other_name);
+  TEST_FLTEQ(-99.9, float_arg, 0.0001f);
 
   TEST_INTEQ(2, Flags_GetUnnamedLength());
   TEST_STREQ("unnamed1", Flags_GetUnnamed(0));
