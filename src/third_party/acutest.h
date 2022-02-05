@@ -87,9 +87,8 @@
 #define TEST_STREQ(cmp, cand) TEST_CHECK(strcmp(cmp, cand) == 0); TEST_MSG("%s", cand)
 #define TEST_INTEQ(cmp, cand) TEST_CHECK(cmp == cand); TEST_MSG("%d", cand)
 #define TEST_FLTEQ(cmp, cand, eps) TEST_CHECK(fabsf(cmp - cand) < eps); TEST_MSG("%f", cand)
-
-#define TRACE_STR(variable) do { fprintf(stderr, __FILE__":%d "#variable"=%s\n", __LINE__, variable); } while (0)
-#define TRACE_INT(variable) do { fprintf(stderr, __FILE__":%d "#variable"=%d\n", __LINE__, variable); } while (0)
+#define TEST_SIZEQ(cmp, cand) TEST_CHECK(cmp == cand); TEST_MSG("%zu", cand)
+#define TEST_STR_CONTAINS(cmp, cand) TEST_CHECK(strstr(cand, cmp) != NULL); TEST_MSG("'%s' not found in '%s'", cmp, cand)
 
      /* These macros are the same as TEST_CHECK_ and TEST_CHECK except that if the
       * condition fails, the currently executed unit test is immediately aborted.
@@ -279,6 +278,7 @@
                /* The unit test files should not rely on anything below. */
 
 #include <ctype.h>
+#include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -455,7 +455,7 @@ extern "C" {
     acutest_timer_print_diff_(void)
   {
     printf("%.6lf secs", acutest_timer_diff_(acutest_timer_start_, acutest_timer_end_));
-  }
+}
 #elif defined ACUTEST_HAS_POSIX_TIMER_
   static clockid_t acutest_timer_id_;
   typedef struct timespec acutest_timer_type_;
@@ -589,7 +589,7 @@ extern "C" {
       n = printf("%s", buffer);
       SetConsoleTextAttribute(h, info.wAttributes);
       return n;
-    }
+  }
 #else
     n = printf("%s", buffer);
     return n;
@@ -1212,7 +1212,7 @@ extern "C" {
       else {
         acutest_error_("Cannot create unit test subprocess [%ld].", GetLastError());
         failed = 1;
-      }
+    }
 
 #else
 
@@ -1221,7 +1221,7 @@ extern "C" {
 
 #endif
 
-    }
+  }
     else {
       /* Child processes suppressed through --no-exec. */
       failed = (acutest_do_run_(test, index) != 0);

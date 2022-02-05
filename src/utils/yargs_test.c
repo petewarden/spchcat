@@ -57,41 +57,6 @@ void test_GetFlagWithShortName() {
   TEST_CHECK(result == NULL);
 }
 
-void test_Split() {
-  char** parts = NULL;
-  int parts_length = 0;
-  Split("nosepshere", ':', -1, &parts, &parts_length);
-  TEST_INTEQ(1, parts_length);
-  TEST_STREQ("nosepshere", parts[0]);
-  SplitFree(parts, parts_length);
-
-  parts = NULL;
-  parts_length = 0;
-  Split("seps:r:us", ':', -1, &parts, &parts_length);
-  TEST_INTEQ(3, parts_length);
-  TEST_STREQ("seps", parts[0]);
-  TEST_STREQ("r", parts[1]);
-  TEST_STREQ("us", parts[2]);
-  SplitFree(parts, parts_length);
-
-  parts = NULL;
-  parts_length = 0;
-  Split("too-many-seps", '-', 2, &parts, &parts_length);
-  TEST_INTEQ(2, parts_length);
-  TEST_STREQ("too", parts[0]);
-  TEST_STREQ("many-seps", parts[1]);
-  SplitFree(parts, parts_length);
-
-  parts = NULL;
-  parts_length = 0;
-  Split("weird!trailing!sep!", '!', -1, &parts, &parts_length);
-  TEST_INTEQ(3, parts_length);
-  TEST_STREQ("weird", parts[0]);
-  TEST_STREQ("trailing", parts[1]);
-  TEST_STREQ("sep", parts[2]);
-  SplitFree(parts, parts_length);
-}
-
 void test_NormalizeArgs() {
   char* argv[] = {
     "progname",
@@ -207,6 +172,24 @@ void test_ValidateYargsFlags() {
   };
   result = ValidateYargsFlags(&bad_ptr_flags[0],
     sizeof(bad_ptr_flags) / sizeof(bad_ptr_flags[0]));
+  TEST_CHECK(!result);
+
+  const char* repeated_name_string1 = "Repeated name string1";
+  const char* repeated_name_string2 = "Repeated name string2";
+  const YargsFlag repeated_name_flags[] = {
+    YARGS_STRING("repeated_name", NULL, &repeated_name_string1, "Test value."),
+    YARGS_STRING("repeated_name", NULL, &repeated_name_string2, "Test value."),
+  };
+  result = ValidateYargsFlags(&repeated_name_flags[0],
+    sizeof(repeated_name_flags) / sizeof(repeated_name_flags[0]));
+  TEST_CHECK(!result);
+
+  const YargsFlag repeated_short_name_flags[] = {
+    YARGS_STRING("some_name", "a", &repeated_name_string1, "Test value."),
+    YARGS_STRING("some_other_name", "a", &repeated_name_string2, "Test value."),
+  };
+  result = ValidateYargsFlags(&repeated_short_name_flags[0],
+    sizeof(repeated_short_name_flags) / sizeof(repeated_short_name_flags[0]));
   TEST_CHECK(!result);
 }
 
@@ -528,7 +511,6 @@ void test_yargs_save_to_file() {
 TEST_LIST = {
   {"GetFlagWithName", test_GetFlagWithName},
   {"GetFlagWithShortName", test_GetFlagWithShortName},
-  {"Split", test_Split},
   {"NormalizeArgs", test_NormalizeArgs},
   {"InterpretValueAsFloat", test_InterpretValueAsFloat},
   {"InterpretValueAsInt32", test_InterpretValueAsInt32},

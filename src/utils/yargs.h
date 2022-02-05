@@ -17,14 +17,14 @@ extern "C" {
   } YargsFlagType;
 
   typedef struct YargsFlagStruct {
-    const char* name;
-    const char* short_name;
+    char* name;
+    char* short_name;
     YargsFlagType type;
     bool* bool_value;
     float* float_value;
     int32_t* int32_value;
     const char** string_value;
-    const char* description;
+    char* description;
   } YargsFlag;
 
   // Macros used to simplify adding flag entries.
@@ -40,14 +40,16 @@ extern "C" {
 #define YARGS_STRING(NAME, SHORT_NAME, VARIABLE_ADDR, DESCRIPTION) {\
   NAME, SHORT_NAME, FT_STRING, NULL, NULL, NULL, VARIABLE_ADDR, DESCRIPTION }
 
-  bool yargs_init(const YargsFlag* definitions, size_t definitions_length,
-    char** argv, int argc);
+  bool yargs_init(const YargsFlag* flags, size_t flags_length, char** argv,
+    int argc);
   void yargs_free();
 
-  void yargs_print_usage();
+  void yargs_print_usage(const YargsFlag* flags, int flags_length);
 
-  bool yargs_load_from_file(const YargsFlag* flags, int flags_length, const char* filename);
-  bool yargs_save_to_file(const YargsFlag* flags, int flags_length, const char* filename);
+  bool yargs_load_from_file(const YargsFlag* flags, int flags_length,
+    const char* filename);
+  bool yargs_save_to_file(const YargsFlag* flags, int flags_length,
+    const char* filename);
 
   int yargs_get_unnamed_length();
   const char* yargs_get_unnamed(int index);

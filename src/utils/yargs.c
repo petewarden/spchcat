@@ -10,6 +10,7 @@
 #include <sys/types.h>
 
 #include "termcolor-c.h"
+#include "string_utils.h"
 
 // Application name from argv[0], used for usage printout.
 static const char* app_name = NULL;
@@ -51,54 +52,6 @@ static const YargsFlag* GetFlagWithShortName(const YargsFlag* flags,
   return NULL;
 }
 
-// Splits a string into multiple parts, based on the single-character separator.
-// The `max_splits` arguments controls the maximum number of parts that will be
-// produced, or -1 for no maximum. The caller is responsible for calling free() 
-// on the `outputs` array, and for all of the entries in that array.
-static void Split(const char* input, char separator, const int max_splits,
-  char*** outputs, int* outputs_length) {
-  assert(input != NULL);
-  const int input_length = strlen(input);
-  *outputs = NULL;
-  *outputs_length = 0;
-  int last_split_index = 0;
-  for (int i = 0; i < input_length; ++i) {
-    const char current = input[i];
-    if ((current == separator) &&
-      ((max_splits == -1) || (*outputs_length < (max_splits - 1)))) {
-      const int split_length = (i - last_split_index);
-      char* split = malloc(split_length + 1);
-      for (int j = 0; j < split_length; ++j) {
-        split[j] = input[last_split_index + j];
-      }
-      split[split_length] = 0;
-      *outputs = realloc(*outputs, (*outputs_length + 1) * sizeof(char*));
-      (*outputs)[*outputs_length] = split;
-      *outputs_length += 1;
-      last_split_index = i + 1;
-    }
-  }
-  const int split_length = (input_length - last_split_index);
-  if (split_length > 0) {
-    char* split = malloc(split_length + 1);
-    for (int j = 0; j < split_length; ++j) {
-      split[j] = input[last_split_index + j];
-    }
-    split[split_length] = 0;
-    *outputs = realloc(*outputs, (*outputs_length + 1) * sizeof(char*));
-    (*outputs)[*outputs_length] = split;
-    *outputs_length += 1;
-  }
-}
-
-// Deallocates the memory allocated by the Split function.
-static void SplitFree(char** outputs, int outputs_length) {
-  for (int i = 0; i < outputs_length; ++i) {
-    free(outputs[i]);
-  }
-  free(outputs);
-}
-
 // Splits "--foo=bar" into "--foo", "bar", "-xyz" into "-x", "-y", "-z". This
 // makes it easier to parse the arguments. Also skips over the first argument,
 // since that just contains the application name.
@@ -111,7 +64,7 @@ static void NormalizeArgs(char** argv, int argc, char*** norm_argv, int* norm_ar
     if ((arg[0] == '-') && (arg[1] == '-')) {
       char** opt_parts = NULL;
       int opt_parts_length = 0;
-      Split(arg, '=', 2, &opt_parts, &opt_parts_length);
+      string_split(arg, '=', 2, &opt_parts, &opt_parts_length);
       for (int j = 0; j < opt_parts_length; ++j) {
         *norm_argc += 1;
         *norm_argv = realloc(*norm_argv, sizeof(const char*) * (*norm_argc));
@@ -125,7 +78,7 @@ static void NormalizeArgs(char** argv, int argc, char*** norm_argv, int* norm_ar
 
       char** opt_parts = NULL;
       int opt_parts_length = 0;
-      Split(arg, '=', 2, &opt_parts, &opt_parts_length);
+      string_split(arg, '=', 2, &opt_parts, &opt_parts_length);
       if (opt_parts_length > 1) {
         // If there's an '=', assume there's only a single short name specified
         // and break the arg into the name and the value.
@@ -137,7 +90,7 @@ static void NormalizeArgs(char** argv, int argc, char*** norm_argv, int* norm_ar
         free(opt_parts);
       }
       else {
-        SplitFree(opt_parts, opt_parts_length);
+        string_list_free(opt_parts, opt_parts_length);
         const char* short_opts = &(arg[1]);
         const int short_opts_length = strlen(short_opts);
         for (int j = 0; j < short_opts_length; ++j) {
@@ -201,9 +154,9 @@ static bool InterpretValueAsInt32(const char* string, int32_t* output) {
 
 // Perform checks on the input data supplied by the caller, to ensure there are
 // no obvious logical errors.
-static bool ValidateYargsFlags(const YargsFlag* definitions, int definitions_length) {
-  for (int i = 0; i < definitions_length; ++i) {
-    const YargsFlag* flag = &definitions[i];
+static bool ValidateYargsFlags(const YargsFlag* flags, int flags_length) {
+  for (int i = 0; i < flags_length; ++i) {
+    const YargsFlag* flag = &flags[i];
     if ((flag->name == NULL)) {
       fprintf(stderr, "Missing name in flag definition #%d.\n", i);
       return false;
@@ -217,6 +170,23 @@ static bool ValidateYargsFlags(const YargsFlag* definitions, int definitions_len
         flag->short_name, flag->name, i);
       return false;
     }
+    for (int j = i + 1; j < flags_length; ++j) {
+      const YargsFlag* other_flag = &flags[j];
+      if (strcmp(flag->name, other_flag->name) == 0) {
+        fprintf(stderr,
+          "Name '%s' is repeated in flag definitions #%d and %d.\n", flag->name,
+          i, j);
+        return false;
+      }
+      if ((flag->short_name != NULL) && (other_flag->short_name != NULL) &&
+        (strcmp(flag->short_name, other_flag->short_name) == 0)) {
+        fprintf(stderr,
+          "Short name '%s' is repeated in flag definitions #%d and %d.\n",
+          flag->short_name, i, j);
+        return false;
+      }
+    }
+
     switch (flag->type) {
     case FT_BOOL: {
       if (flag->bool_value == NULL) {
@@ -277,11 +247,11 @@ static bool LoadFromFileContents(const YargsFlag* flags, size_t flags_length,
 
   char** argv = NULL;
   int argc = 0;
-  Split(contents, ' ', -1, &argv, &argc);
+  string_split(contents, ' ', -1, &argv, &argc);
 
   const bool result = yargs_init(flags, flags_length, argv, argc);
 
-  SplitFree(argv, argc);
+  string_list_free(argv, argc);
   return result;
 }
 
