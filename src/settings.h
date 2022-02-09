@@ -15,7 +15,7 @@ extern "C" {
     const char* source;
     const char* languages_dir;
     char* model;
-    const char* scorer;
+    char* scorer;
     int source_buffer_size;
     int beam_width;
     bool set_alphabeta;
@@ -29,11 +29,11 @@ extern "C" {
     int stream_size;
     int extended_stream_size;
     const char* hot_words;
-    const char** files;
+    char** files;
     int files_count;
   } Settings;
 
-  Settings* settings_init_from_argv(char** argv, int argc);
+  Settings* settings_init_from_argv(int argc, char** argv);
   void settings_free(Settings* settings);
 
 #ifdef __CPLUSPLUS

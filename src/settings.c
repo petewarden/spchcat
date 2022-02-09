@@ -2,6 +2,7 @@
 
 #include <dirent.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "file_utils.h"
@@ -145,9 +146,77 @@ static void find_model_for_language(Settings* settings) {
   free(found_model_filename);
 }
 
-Settings* settings_init_from_argv(char** argv, int argc) {
+static void find_scorer_for_language(Settings* settings) {
+  // If the scorer filename was explicitly set on the command line, don't worry
+  // about searching for it.
+  if (settings->scorer != NULL) {
+    // Make a copy of the string we got from the arg parsing, so that we can
+    // free it ourselves, like the other paths below.
+    settings->scorer = string_duplicate(settings->scorer);
+    return;
+  }
 
-  Settings* settings = (Settings*)(malloc(sizeof(Settings)));
+  char* language_folder =
+    file_join_paths(settings->languages_dir, settings->language);
+
+  char* scorer = file_find_one_with_suffix(language_folder, ".scorer");
+  if ((scorer == NULL) ||
+    (strstr(scorer, "command") != NULL) ||
+    (strstr(scorer, "digit") != NULL) ||
+    (strstr(scorer, "yesno") != NULL)) {
+    // These are too small to be useful, so skip them.
+    free(scorer);
+    free(language_folder);
+    return;
+  }
+
+  settings->scorer = file_join_paths(language_folder, scorer);
+  free(scorer);
+  free(language_folder);
+}
+
+static bool set_source(Settings* settings) {
+  const int files_length = yargs_get_unnamed_length();
+  if (settings->source != NULL) {
+    if ((files_length != 0) &&
+      (strcmp(settings->source, "file") != 0)) {
+      fprintf(stderr,
+        "Source '%s' was specified, but files were also passed as arguments.\n",
+        settings->source);
+      return false;
+    }
+    else if ((files_length == 0) &&
+      (strcmp(settings->source, "file") == 0)) {
+      fprintf(stderr,
+        "File source was specified, but no files were passed as arguments.\n");
+      return false;
+    }
+  }
+  else if (files_length == 0) {
+    settings->source = "mic";
+  }
+  else {
+    settings->source = "file";
+  }
+
+  if (strcmp(settings->source, "file") == 0) {
+    settings->files_count = files_length;
+    settings->files = calloc(files_length, sizeof(char*));
+    for (int i = 0; i < files_length; ++i) {
+      settings->files[i] = string_duplicate(yargs_get_unnamed(i));
+    }
+  }
+  else {
+    settings->files_count = 0;
+    settings->files = NULL;
+  }
+
+  return true;
+}
+
+Settings* settings_init_from_argv(int argc, char** argv) {
+
+  Settings* settings = (Settings*)(calloc(1, sizeof(Settings)));
   set_defaults(settings);
 
   char* language_description_string = language_description(settings);
@@ -162,7 +231,7 @@ Settings* settings_init_from_argv(char** argv, int argc) {
     YARGS_STRING("hot_words", "h", &settings->hot_words, ""),
     YARGS_STRING("languages_dir", "d", &settings->languages_dir, ""),
     YARGS_STRING("model", "m", (const char**)(&settings->model), ""),
-    YARGS_STRING("scorer", "c", &settings->scorer, ""),
+    YARGS_STRING("scorer", "c", (const char**)(&settings->scorer), ""),
     YARGS_INT32("source_buffer_size", "o", &settings->source_buffer_size, ""),
     YARGS_INT32("beam_width", "b", &settings->beam_width, ""),
     YARGS_FLOAT("lm_alpha", "a", &settings->lm_alpha, ""),
@@ -177,7 +246,10 @@ Settings* settings_init_from_argv(char** argv, int argc) {
   };
   const int flags_length = sizeof(flags) / sizeof(flags[0]);
 
-  const bool init_status = yargs_init(flags, flags_length, argv, argc);
+  const char* app_description =
+    "Speech recognition tool to convert audio to text transcripts.";
+  const bool init_status = yargs_init(flags, flags_length,
+    app_description, argv, argc);
   if (!init_status) {
     free(language_description_string);
     settings_free(settings);
@@ -188,7 +260,7 @@ Settings* settings_init_from_argv(char** argv, int argc) {
     // Make sure we pick up any languages from a possibly-changed model path.
     free(language_flag.description);
     language_flag.description = language_description(settings);
-    yargs_print_usage(flags, flags_length);
+    yargs_print_usage(flags, flags_length, app_description);
     yargs_free();
     free(language_flag.description);
     free(settings);
@@ -203,6 +275,18 @@ Settings* settings_init_from_argv(char** argv, int argc) {
     return NULL;
   }
 
+  find_scorer_for_language(settings);
+
+  if (!set_source(settings)) {
+    yargs_free();
+    free(language_flag.description);
+    free(settings->language);
+    free(settings->model);
+    free(settings->scorer);
+    free(settings);
+    return NULL;
+  }
+
   free(language_description_string);
 
   return settings;
@@ -210,7 +294,12 @@ Settings* settings_init_from_argv(char** argv, int argc) {
 
 void settings_free(Settings* settings) {
   yargs_free();
+  if (settings == NULL) {
+    return;
+  }
   free(settings->language);
   free(settings->model);
+  free(settings->scorer);
+  string_list_free(settings->files, settings->files_count);
   free(settings);
 }

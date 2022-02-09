@@ -211,7 +211,7 @@ void test_yargs_init() {
     "--some_other_name", "--float_arg", "-99.9", "unnamed2",
   };
   const int argc1 = sizeof(argv1) / sizeof(argv1[0]);
-  bool status = yargs_init(test_flags, test_flags_length, argv1, argc1);
+  bool status = yargs_init(test_flags, test_flags_length, NULL, argv1, argc1);
   TEST_CHECK(status);
   TEST_STREQ("new_value", some_name);
   TEST_INTEQ(32, no_short_name);
@@ -230,7 +230,8 @@ void test_yargs_init() {
     "program",
   };
   const int argc_no_args = sizeof(argv_no_args) / sizeof(argv_no_args[0]);
-  status = yargs_init(test_flags, test_flags_length, argv_no_args, argc_no_args);
+  status = yargs_init(test_flags, test_flags_length, NULL, argv_no_args,
+    argc_no_args);
   TEST_CHECK(status);
   TEST_STREQ("some_value", some_name);
   TEST_INTEQ(10, no_short_name);
@@ -248,7 +249,7 @@ void test_yargs_init() {
   };
   const int argc_short_names =
     sizeof(argv_short_names) / sizeof(argv_short_names[0]);
-  status = yargs_init(test_flags, test_flags_length, argv_short_names,
+  status = yargs_init(test_flags, test_flags_length, NULL, argv_short_names,
     argc_short_names);
   TEST_CHECK(status);
   TEST_STREQ("new_value", some_name);
@@ -264,7 +265,7 @@ void test_yargs_init() {
     "program", "-ab=value",
   };
   const int argc_bad_short = sizeof(argv_bad_short) / sizeof(argv_bad_short[0]);
-  status = yargs_init(test_flags, test_flags_length, argv_bad_short,
+  status = yargs_init(test_flags, test_flags_length, NULL, argv_bad_short,
     argc_bad_short);
   TEST_CHECK(!status);
   yargs_free();
@@ -278,7 +279,7 @@ void test_yargs_init() {
   };
   const int argc_unnamed_only =
     sizeof(argv_unnamed_only) / sizeof(argv_unnamed_only[0]);
-  status = yargs_init(test_flags, test_flags_length, argv_unnamed_only,
+  status = yargs_init(test_flags, test_flags_length, NULL, argv_unnamed_only,
     argc_unnamed_only);
   TEST_CHECK(status);
   TEST_STREQ("some_value", some_name);
@@ -294,7 +295,7 @@ void test_yargs_init() {
     "program", "--no_such",
   };
   const int argc_no_such = sizeof(argv_no_such) / sizeof(argv_no_such[0]);
-  status = yargs_init(test_flags, test_flags_length, argv_no_such,
+  status = yargs_init(test_flags, test_flags_length, NULL, argv_no_such,
     argc_no_such);
   TEST_CHECK(!status);
   yargs_free();
@@ -304,7 +305,7 @@ void test_yargs_init() {
   };
   const int argc_no_such_short =
     sizeof(argv_no_such_short) / sizeof(argv_no_such_short[0]);
-  status = yargs_init(test_flags, test_flags_length, argv_no_such_short,
+  status = yargs_init(test_flags, test_flags_length, NULL, argv_no_such_short,
     argc_no_such_short);
   TEST_CHECK(!status);
   yargs_free();
@@ -312,11 +313,12 @@ void test_yargs_init() {
   const YargsFlag empty_flags[] = {};
   const int empty_flags_length = 0;
 
-  status = yargs_init(empty_flags, empty_flags_length, argv_no_args, argc_no_args);
+  status = yargs_init(empty_flags, empty_flags_length, NULL, argv_no_args,
+    argc_no_args);
   TEST_CHECK(status);
   yargs_free();
 
-  status = yargs_init(empty_flags, empty_flags_length, argv_unnamed_only,
+  status = yargs_init(empty_flags, empty_flags_length, NULL, argv_unnamed_only,
     argc_unnamed_only);
   TEST_CHECK(status);
   TEST_INTEQ(2, yargs_get_unnamed_length());
@@ -484,7 +486,7 @@ void test_yargs_save_to_file() {
     "--some_other_name", "--float_arg", "-99.9", "unnamed2",
   };
   const int argc1 = sizeof(argv1) / sizeof(argv1[0]);
-  bool status = yargs_init(test_flags, test_flags_length, argv1, argc1);
+  bool status = yargs_init(test_flags, test_flags_length, NULL, argv1, argc1);
   TEST_CHECK(status);
   const char* test_filename1 = "/tmp/yargs_test_file1.txt";
   yargs_save_to_file(test_flags, test_flags_length, test_filename1);

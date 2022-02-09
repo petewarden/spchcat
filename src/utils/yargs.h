@@ -40,11 +40,12 @@ extern "C" {
 #define YARGS_STRING(NAME, SHORT_NAME, VARIABLE_ADDR, DESCRIPTION) {\
   NAME, SHORT_NAME, FT_STRING, NULL, NULL, NULL, VARIABLE_ADDR, DESCRIPTION }
 
-  bool yargs_init(const YargsFlag* flags, size_t flags_length, char** argv,
-    int argc);
+  bool yargs_init(const YargsFlag* flags, size_t flags_length,
+    const char* app_description, char** argv, int argc);
   void yargs_free();
 
-  void yargs_print_usage(const YargsFlag* flags, int flags_length);
+  void yargs_print_usage(const YargsFlag* flags, int flags_length,
+    const char* app_description);
 
   bool yargs_load_from_file(const YargsFlag* flags, int flags_length,
     const char* filename);

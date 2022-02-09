@@ -1,48 +1,127 @@
-###
-### From topdir, first use multistrap to prepare a raspbian buster armhf root
-### $ multistrap -d multistrap-raspbian-buster -f native_client/multistrap_raspbian_buster.conf
-###
-### You can make a tarball after:
-### $ touch multistrap-raspbian-buster.tar && sudo tar cf multistrap-raspbian-buster.tar multistrap-raspbian-buster/ && xz multistrap-raspbian-buster.tar
-###
-### Then cross-build:
-### $ make -C native_client/ TARGET=rpi3 TFDIR=../../tensorflow/tensorflow/
-###
+CC := gcc
+CCFLAGS := \
+  -std=c99 \
+  -Wall \
+  -Werror \
+  -g \
+  -O0 \
+  -Isrc \
+  -Isrc/third_party \
+  -Isrc/utils \
+  -Ibuild/lib
 
-.PHONY: clean run print-toolchain
+LDFLAGS := \
+  -Lbuild/lib \
+  -lstt \
+  -ltensorflowlite \
+  -ltflitedelegates
 
-include definitions.mk
+TEST_CCFLAGS := \
+  -fsanitize=address \
+  -fsanitize=undefined \
+  -fno-sanitize-recover=all \
+  -fsanitize=float-divide-by-zero \
+  -fsanitize=float-cast-overflow \
+  -fno-sanitize=null \
+  -fno-sanitize=alignment \
+  -fno-omit-frame-pointer
 
-default: $(SPCHCAT_BIN)
+DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)$*.d
+TEST_DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)$*_test.d
+
+BUILDDIR = build/
+OBJDIR := $(BUILDDIR)obj/
+BINDIR := $(BUILDDIR)bin/
+DEPDIR := $(BUILDDIR)dep/
+LIBDIR := $(BUILDDIR)lib/
+
+OBJS := $(addprefix $(OBJDIR),$(subst .c,.o,$(SRCS)))
+TEST_OBJS := $(addprefix $(OBJDIR),$(subst .c,.o,$(TEST_SRCS)))
+
+.PHONY: all clean test
+
+all: \
+  $(BINDIR)file_utils_test \
+  $(BINDIR)string_utils_test \
+  $(BINDIR)yargs_test \
+  $(BINDIR)settings_test \
+  $(BINDIR)spchcat
 
 clean:
-	rm -f spchcat
+	rm -rf $(BUILDDIR)
 
-$(SPCHCAT_BIN): src/spchcat.cc src/pa_list_devices.cc Makefile
-	$(CXX) $(CFLAGS) $(CFLAGS_STT) $(SOX_CFLAGS) src/pa_list_devices.cc src/spchcat.cc $(LDFLAGS) $(SOX_LDFLAGS)
-ifeq ($(OS),Darwin)
-	install_name_tool -change bazel-out/local-opt/bin/native_client/libstt.so @rpath/libstt.so stt
-endif
+clean_src:
+	rm -rf $(OBJDIR)
+	rm -rf $(BINDIR)
+	rm -rf $(DEPDIR)
 
-run: $(SPCHCAT_BIN)
-	${META_LD_LIBRARY_PATH}=${TFDIR}/bazel-bin/native_client:${${META_LD_LIBRARY_PATH}} ./stt ${ARGS}
+test: \
+  run_file_utils_test \
+  run_string_utils_test \
+  run_yargs_test \
+  run_settings_test
 
-debug: $(SPCHCAT_BIN)
-	${META_LD_LIBRARY_PATH}=${TFDIR}/bazel-bin/native_client:${${META_LD_LIBRARY_PATH}} gdb --args ./stt ${ARGS}
+$(OBJDIR)%.o: %.c $(DEPDIR)/%.d | $(DEPDIR)
+	@mkdir -p $(dir $@)
+	@mkdir -p $(dir $(DEPDIR)$*_test.d)
+	$(CC) $(CCFLAGS) $(DEPFLAGS) -c $< -o $@
 
-install: $(SPCHCAT_BIN)
-	install -d ${PREFIX}/lib
-	install -m 0644 ${TFDIR}/bazel-bin/native_client/libstt.so ${PREFIX}/lib/
-	install -d ${PREFIX}/include
-	install -m 0644 coqui-stt.h ${PREFIX}/include
-	install -d ${PREFIX}/bin
-	install -m 0755 stt ${PREFIX}/bin/
+$(OBJDIR)%_test.o: %_test.c $(DEPDIR)/%.d | $(DEPDIR)
+	@mkdir -p $(dir $@)
+	@mkdir -p $(dir $(DEPDIR)$*.d)
+	$(CC) $(CCFLAGS) $(TEST_CCFLAGS) $(TEST_DEPFLAGS) -c $< -o $@
 
-uninstall:
-	rm -f ${PREFIX}/bin/spchcat
-	rmdir --ignore-fail-on-non-empty ${PREFIX}/bin
-	rm -f ${PREFIX}/lib/libstt.so
-	rmdir --ignore-fail-on-non-empty ${PREFIX}/lib
+$(BINDIR)file_utils_test: \
+  $(OBJDIR)src/utils/file_utils_test.o \
+  $(OBJDIR)src/utils/string_utils.o
+	@mkdir -p $(dir $@) 
+	$(CC) $(CCFLAGS) $(TEST_CCFLAGS) $^ -o $@
 
-print-toolchain:
-	@echo $(TOOLCHAIN)
+run_file_utils_test: $(BINDIR)file_utils_test
+	$<
+
+$(BINDIR)string_utils_test: \
+  $(OBJDIR)src/utils/string_utils_test.o
+	@mkdir -p $(dir $@) 
+	$(CC) $(CCFLAGS) $(TEST_CCFLAGS) $^ -o $@
+
+run_string_utils_test: $(BINDIR)string_utils_test
+	$<
+
+$(BINDIR)yargs_test: \
+  $(OBJDIR)src/utils/string_utils.o \
+  $(OBJDIR)src/utils/yargs_test.o
+	@mkdir -p $(dir $@) 
+	$(CC) $(CCFLAGS) $(TEST_CCFLAGS) $^ -o $@
+
+run_yargs_test: $(BINDIR)yargs_test
+	$<
+
+$(BINDIR)settings_test: \
+  $(OBJDIR)src/settings_test.o \
+  $(OBJDIR)src/utils/file_utils.o \
+  $(OBJDIR)src/utils/string_utils.o \
+  $(OBJDIR)src/utils/yargs.o
+	@mkdir -p $(dir $@) 
+	$(CC) $(CCFLAGS) $(TEST_CCFLAGS) $^ -o $@
+
+run_settings_test: $(BINDIR)settings_test
+	$<
+
+$(BINDIR)spchcat: \
+ $(OBJDIR)src/app_main.o \
+ $(OBJDIR)src/main.o \
+ $(OBJDIR)src/settings.o \
+ $(OBJDIR)src/utils/file_utils.o \
+ $(OBJDIR)src/utils/string_utils.o \
+ $(OBJDIR)src/utils/yargs.o
+	@mkdir -p $(dir $@) 
+	$(CC) $^ -o $@ $(LDFLAGS)
+
+$(DEPDIR): ; @mkdir -p $@
+
+SRCS := $(shell find src/ -type f -name '*.c')
+DEPFILES := $(SRCS:%.c=$(DEPDIR)/%.d)
+$(DEPFILES):
+
+include $(wildcard $(DEPFILES))

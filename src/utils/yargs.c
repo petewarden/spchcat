@@ -249,14 +249,14 @@ static bool LoadFromFileContents(const YargsFlag* flags, size_t flags_length,
   int argc = 0;
   string_split(contents, ' ', -1, &argv, &argc);
 
-  const bool result = yargs_init(flags, flags_length, argv, argc);
+  const bool result = yargs_init(flags, flags_length, NULL, argv, argc);
 
   string_list_free(argv, argc);
   return result;
 }
 
 bool yargs_init(const YargsFlag* flags, size_t flags_length,
-  char** argv, int argc) {
+  const char* app_description, char** argv, int argc) {
   assert(flags != NULL);
 
   if (!ValidateYargsFlags(flags, flags_length)) {
@@ -298,7 +298,7 @@ bool yargs_init(const YargsFlag* flags, size_t flags_length,
       }
       if (flag == NULL) {
         fprintf(stderr, "Flag '%s' not recognized.\n", arg);
-        yargs_print_usage(flags, flags_length);
+        yargs_print_usage(flags, flags_length, app_description);
         FreeNormalizedArgs(norm_argv, norm_argc);
         return false;
       }
@@ -421,7 +421,8 @@ void yargs_free() {
   unnamed_args_length = 0;
 }
 
-void yargs_print_usage(const YargsFlag* flags, int flags_length) {
+void yargs_print_usage(const YargsFlag* flags, int flags_length,
+  const char* app_description) {
   text_bold(stderr);
   fprintf(stderr, "Usage");
   reset_colors(stderr);
@@ -459,6 +460,11 @@ void yargs_print_usage(const YargsFlag* flags, int flags_length) {
     }
   }
   fprintf(stderr, "\n");
+  if (app_description != NULL) {
+    text_bold(stderr);
+    fprintf(stderr, "%s\n", app_description);
+    reset_colors(stderr);
+  }
   for (int i = 0; i < flags_length; ++i) {
     const YargsFlag* flag = &flags[i];
     text_green(stderr);
