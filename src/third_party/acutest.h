@@ -87,7 +87,7 @@
 #define TEST_STREQ(cmp, cand) TEST_CHECK(strcmp(cmp, cand) == 0); TEST_MSG("%s vs %s", cmp, cand)
 #define TEST_INTEQ(cmp, cand) TEST_CHECK(cmp == cand); TEST_MSG("%d vs %d", cmp, cand)
 #define TEST_FLTEQ(cmp, cand, eps) TEST_CHECK(fabsf(cmp - cand) < eps); TEST_MSG("%f vs %f", cmp, cand)
-#define TEST_SIZEQ(cmp, cand) TEST_CHECK(cmp == cand); TEST_MSG("%zu vs %zu", cmp, cand)
+#define TEST_SIZEQ(cmp, cand) TEST_CHECK(cmp == cand); TEST_MSG("%zu vs %zu", (size_t)(cmp), cand)
 #define TEST_STR_CONTAINS(cmp, cand) TEST_CHECK(strstr(cand, cmp) != NULL); TEST_MSG("'%s' not found in '%s'", cmp, cand)
 
      /* These macros are the same as TEST_CHECK_ and TEST_CHECK except that if the

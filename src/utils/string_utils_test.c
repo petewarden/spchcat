@@ -155,6 +155,13 @@ void test_string_append() {
   free(result);
 }
 
+void test_string_append_in_place() {
+  char* original = string_duplicate("original");
+  char* result = string_append_in_place(original, "b");
+  TEST_STREQ("originalb", result);
+  free(result);
+}
+
 void test_string_join() {
   const char* list1[] = { "a", "b", "c" };
   const int list1_length = sizeof(list1) / sizeof(list1[0]);
@@ -239,6 +246,7 @@ TEST_LIST = {
   {"string_alloc_sprintf", test_string_alloc_sprintf},
   {"string_split", test_string_split},
   {"string_append", test_string_append},
+  {"string_append_in_place", test_string_append_in_place},
   {"string_join", test_string_join},
   {"string_list_filter", test_string_list_filter},
   {"string_list_add", test_string_list_add},

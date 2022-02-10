@@ -8,10 +8,13 @@
 #include <pulse/error.h>
 
 #include "coqui-stt.h"
+
+#include "audio_buffer.h"
 #include "pa_list_devices.h"
 #include "settings.h"
 #include "string_utils.h"
 #include "trace.h"
+#include "wav_io.h"
 
 static bool load_model(const Settings* settings, ModelState** model_state) {
   const int create_status = STT_CreateModel(settings->model, model_state);
@@ -109,11 +112,6 @@ static bool load_scorer(const Settings* settings, ModelState* model_state) {
   return true;
 }
 
-static bool process_files(const Settings* settings, ModelState* model_state) {
-  // Not yet implemented.
-  return false;
-}
-
 static char* get_device_name(const char* source) {
   if (strcmp(source, "mic") == 0) {
     return NULL;
@@ -142,11 +140,21 @@ static char* get_device_name(const char* source) {
 
 static char* plain_text_from_transcript(const CandidateTranscript* transcript) {
   char* result = string_duplicate("");
+  float previous_time = 0.0f;
   for (int i = 0; i < transcript->num_tokens; ++i) {
     const TokenMetadata* token = &transcript->tokens[i];
-    char* new_result = string_append(result, token->text);
-    free(result);
-    result = new_result;
+    const float current_time = token->start_time;
+    const float time_since_previous = current_time - previous_time;
+    if (time_since_previous > 1.0f) {
+      result = string_append_in_place(result, "\n");
+      if (strcmp(token->text, " ") != 0) {
+        result = string_append_in_place(result, token->text);
+      }
+    }
+    else {
+      result = string_append_in_place(result, token->text);
+    }
+    previous_time = current_time;
   }
   return result;
 }
@@ -170,6 +178,28 @@ static void output_streaming_transcript(const Metadata* current_metadata,
   }
   free(current_text);
   free(previous_text);
+}
+
+static bool process_file(const Settings* settings, ModelState* model_state,
+  const char* filename) {
+  AudioBuffer* buffer = NULL;
+  if (!wav_io_load(filename, &buffer)) {
+    return false;
+  }
+  Metadata* metadata = STT_SpeechToTextWithMetadata(model_state, buffer->data,
+    buffer->samples_per_channel, 1);
+  output_streaming_transcript(metadata, NULL);
+  audio_buffer_free(buffer);
+  return true;
+}
+
+static bool process_files(const Settings* settings, ModelState* model_state) {
+  for (int i = 0; i < settings->files_count; ++i) {
+    if (!process_file(settings, model_state, settings->files[i])) {
+      return false;
+    }
+  }
+  return true;
 }
 
 static bool process_live_input(const Settings* settings, ModelState* model_state) {
@@ -209,6 +239,13 @@ static bool process_live_input(const Settings* settings, ModelState* model_state
   const size_t source_buffer_byte_count = settings->source_buffer_size * 2;
   int16_t* source_buffer = malloc(source_buffer_byte_count);
 
+  AudioBuffer* capture_buffer = NULL;
+  if (settings->stream_capture_file != NULL) {
+    capture_buffer =
+      audio_buffer_alloc(model_rate, settings->stream_capture_duration, 1);
+  }
+  int stream_capture_offset = 0;
+
   Metadata* previous_metadata = NULL;
   while (true) {
     int read_error;
@@ -219,6 +256,15 @@ static bool process_live_input(const Settings* settings, ModelState* model_state
         pa_strerror(read_error));
       break;
     }
+    if (capture_buffer != NULL) {
+      if ((stream_capture_offset + settings->source_buffer_size) > settings->stream_capture_duration) {
+        break;
+      }
+      int16_t* current_capture = capture_buffer->data + stream_capture_offset;
+      memcpy(current_capture, source_buffer, source_buffer_byte_count);
+      stream_capture_offset += settings->source_buffer_size;
+    }
+
     STT_FeedAudioContent(streaming_state, source_buffer,
       settings->source_buffer_size);
     Metadata* current_metadata = STT_IntermediateDecodeWithMetadata(streaming_state, 1);
@@ -229,6 +275,11 @@ static bool process_live_input(const Settings* settings, ModelState* model_state
       STT_FreeMetadata(previous_metadata);
     }
     previous_metadata = current_metadata;
+  }
+
+  if (capture_buffer != NULL) {
+    wav_io_save(settings->stream_capture_file, capture_buffer);
+    audio_buffer_free(capture_buffer);
   }
 
   if (previous_metadata != NULL) {

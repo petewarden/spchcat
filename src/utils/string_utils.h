@@ -19,6 +19,8 @@ extern "C" {
 
   char* string_append(const char* a, const char* b);
 
+  char* string_append_in_place(char* a, const char* b);
+
   // Splits a string into multiple parts, based on the single-character separator.
   // The `max_splits` arguments controls the maximum number of parts that will be
   // produced, or -1 for no maximum. The caller is responsible for calling free() 

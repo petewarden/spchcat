@@ -111,6 +111,12 @@ char* string_append(const char* a, const char* b) {
   return string_alloc_sprintf("%s%s", a, b);
 }
 
+char* string_append_in_place(char* a, const char* b) {
+  char* result = string_alloc_sprintf("%s%s", a, b);
+  free(a);
+  return result;
+}
+
 char* string_join(const char** list, int list_length, const char* separator) {
   char* current = string_duplicate("");
   for (int i = 0; i < list_length; ++i) {

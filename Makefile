@@ -146,7 +146,9 @@ $(BINDIR)spchcat: \
  $(OBJDIR)src/app_main.o \
  $(OBJDIR)src/main.o \
  $(OBJDIR)src/settings.o \
+ $(OBJDIR)src/audio/audio_buffer.o \
  $(OBJDIR)src/audio/pa_list_devices.o \
+ $(OBJDIR)src/audio/wav_io.o \
  $(OBJDIR)src/utils/file_utils.o \
  $(OBJDIR)src/utils/string_utils.o \
  $(OBJDIR)src/utils/yargs.o

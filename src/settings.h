@@ -29,6 +29,8 @@ extern "C" {
     int stream_size;
     int extended_stream_size;
     const char* hot_words;
+    const char* stream_capture_file;
+    int stream_capture_duration;
     char** files;
     int files_count;
   } Settings;

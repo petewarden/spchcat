@@ -260,6 +260,8 @@ void test_settings_init_from_argv() {
     "--stream_size", "320",
     "--extended_stream_size", "640",
     "--hot_words", "baz:10.0,fish:20.0",
+    "--stream_capture_file", "/foo/bar.wav",
+    "--stream_capture_duration", "32000",
     "file1", "file2",
   };
   const int argc5 = sizeof(argv5) / sizeof(argv5[0]);
@@ -282,6 +284,8 @@ void test_settings_init_from_argv() {
   TEST_INTEQ(320, settings5->stream_size);
   TEST_INTEQ(640, settings5->extended_stream_size);
   TEST_STREQ("baz:10.0,fish:20.0", settings5->hot_words);
+  TEST_STREQ("/foo/bar.wav", settings5->stream_capture_file);
+  TEST_INTEQ(32000, settings5->stream_capture_duration);
   settings_free(settings5);
 
   free(en_us_model);

@@ -72,6 +72,8 @@ static void set_defaults(Settings* settings) {
   settings->stream_size = 0;
   settings->extended_stream_size = 0;
   settings->hot_words = NULL;
+  settings->stream_capture_file = NULL;
+  settings->stream_capture_duration = 16000;
 }
 
 static void find_model_for_language(Settings* settings) {
@@ -150,9 +152,14 @@ static void find_scorer_for_language(Settings* settings) {
   // If the scorer filename was explicitly set on the command line, don't worry
   // about searching for it.
   if (settings->scorer != NULL) {
-    // Make a copy of the string we got from the arg parsing, so that we can
-    // free it ourselves, like the other paths below.
-    settings->scorer = string_duplicate(settings->scorer);
+    if (strcmp(settings->scorer, "none") == 0) {
+      settings->scorer = NULL;
+    }
+    else {
+      // Make a copy of the string we got from the arg parsing, so that we can
+      // free it ourselves, like the other paths below.
+      settings->scorer = string_duplicate(settings->scorer);
+    }
     return;
   }
 
@@ -243,6 +250,8 @@ Settings* settings_init_from_argv(int argc, char** argv) {
     YARGS_INT32("json_candidate_transcripts", "n", &settings->json_candidate_transcripts, ""),
     YARGS_INT32("stream_size", "z", &settings->stream_size, ""),
     YARGS_INT32("extended_stream_size", "r", &settings->extended_stream_size, ""),
+    YARGS_STRING("stream_capture_file", "f", &settings->stream_capture_file, ""),
+    YARGS_INT32("stream_capture_duration", "g", &settings->stream_capture_duration, ""),
   };
   const int flags_length = sizeof(flags) / sizeof(flags[0]);
 
