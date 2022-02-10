@@ -62,7 +62,10 @@ test: \
   run_file_utils_test \
   run_string_utils_test \
   run_yargs_test \
-  run_settings_test
+  run_settings_test \
+  run_pa_list_devices_test \
+  run_audio_buffer_test \
+  run_wav_io_test
 
 $(OBJDIR)%.o: %.c $(DEPDIR)/%.d | $(DEPDIR)
 	@mkdir -p $(dir $@)
@@ -107,6 +110,25 @@ $(BINDIR)pa_list_devices_test: \
 	$(CC) $(CCFLAGS) $(TEST_CCFLAGS) -lpulse $^ -o $@
 
 run_pa_list_devices_test: $(BINDIR)pa_list_devices_test
+	$<
+
+$(BINDIR)audio_buffer_test: \
+  $(OBJDIR)src/audio/audio_buffer_test.o
+	@mkdir -p $(dir $@) 
+	$(CC) $(CCFLAGS) $(TEST_CCFLAGS) $^ -o $@
+
+run_audio_buffer_test: $(BINDIR)audio_buffer_test
+	$<
+
+$(BINDIR)wav_io_test: \
+  $(OBJDIR)src/utils/file_utils.o \
+  $(OBJDIR)src/utils/string_utils.o \
+  $(OBJDIR)src/audio/audio_buffer.o \
+  $(OBJDIR)src/audio/wav_io_test.o
+	@mkdir -p $(dir $@) 
+	$(CC) $(CCFLAGS) $(TEST_CCFLAGS) -lm $^ -o $@
+
+run_wav_io_test: $(BINDIR)wav_io_test
 	$<
 
 $(BINDIR)settings_test: \
