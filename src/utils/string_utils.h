@@ -30,6 +30,10 @@ extern "C" {
   // that produce a list of strings, like string_split.
   void string_list_free(char** list, int list_length);
 
+  // Appends a new string to the end of a list. A copy is made of the input
+  // string, so the original can modified or freed independently of the list.
+  void string_list_add(const char* new, char*** list, int* list_length);
+
   char* string_join(const char** list, int list_length, const char* separator);
 
   // Produces a new list that contains only the strings for which the callback

@@ -215,6 +215,23 @@ void test_string_list_filter() {
   string_list_free(results, results_length);
 }
 
+void test_string_list_add() {
+  char** list = NULL;
+  int list_length = 0;
+  string_list_add("foo", &list, &list_length);
+  TEST_INTEQ(1, list_length);
+  TEST_STREQ("foo", list[0]);
+
+  string_list_add("bar", &list, &list_length);
+  string_list_add("baz", &list, &list_length);
+  TEST_INTEQ(3, list_length);
+  TEST_STREQ("foo", list[0]);
+  TEST_STREQ("bar", list[1]);
+  TEST_STREQ("baz", list[2]);
+
+  string_list_free(list, list_length);
+}
+
 TEST_LIST = {
   {"string_starts_with", test_string_starts_with},
   {"string_ends_with", test_string_ends_with},
@@ -224,5 +241,6 @@ TEST_LIST = {
   {"string_append", test_string_append},
   {"string_join", test_string_join},
   {"string_list_filter", test_string_list_filter},
+  {"string_list_add", test_string_list_add},
   {NULL, NULL},
 };

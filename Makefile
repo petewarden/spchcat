@@ -6,6 +6,7 @@ CCFLAGS := \
   -g \
   -O0 \
   -Isrc \
+  -Isrc/audio \
   -Isrc/third_party \
   -Isrc/utils \
   -Ibuild/lib
@@ -14,7 +15,9 @@ LDFLAGS := \
   -Lbuild/lib \
   -lstt \
   -ltensorflowlite \
-  -ltflitedelegates
+  -ltflitedelegates \
+  -lpulse \
+  -lpulse-simple
 
 TEST_CCFLAGS := \
   -fsanitize=address \
@@ -97,6 +100,15 @@ $(BINDIR)yargs_test: \
 run_yargs_test: $(BINDIR)yargs_test
 	$<
 
+$(BINDIR)pa_list_devices_test: \
+  $(OBJDIR)src/utils/string_utils.o \
+  $(OBJDIR)src/audio/pa_list_devices_test.o
+	@mkdir -p $(dir $@) 
+	$(CC) $(CCFLAGS) $(TEST_CCFLAGS) -lpulse $^ -o $@
+
+run_pa_list_devices_test: $(BINDIR)pa_list_devices_test
+	$<
+
 $(BINDIR)settings_test: \
   $(OBJDIR)src/settings_test.o \
   $(OBJDIR)src/utils/file_utils.o \
@@ -112,6 +124,7 @@ $(BINDIR)spchcat: \
  $(OBJDIR)src/app_main.o \
  $(OBJDIR)src/main.o \
  $(OBJDIR)src/settings.o \
+ $(OBJDIR)src/audio/pa_list_devices.o \
  $(OBJDIR)src/utils/file_utils.o \
  $(OBJDIR)src/utils/string_utils.o \
  $(OBJDIR)src/utils/yargs.o

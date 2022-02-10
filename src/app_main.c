@@ -4,7 +4,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <pulse/simple.h>
+#include <pulse/error.h>
+
 #include "coqui-stt.h"
+#include "pa_list_devices.h"
 #include "settings.h"
 #include "string_utils.h"
 #include "trace.h"
@@ -105,6 +109,145 @@ static bool load_scorer(const Settings* settings, ModelState* model_state) {
   return true;
 }
 
+static bool process_files(const Settings* settings, ModelState* model_state) {
+  // Not yet implemented.
+  return false;
+}
+
+static char* get_device_name(const char* source) {
+  if (strcmp(source, "mic") == 0) {
+    return NULL;
+  }
+  else if (strcmp(source, "system") == 0) {
+    char** input_devices = NULL;
+    int input_devices_length = 0;
+    get_input_devices(&input_devices, &input_devices_length);
+    char* result = NULL;
+    for (int i = 0; i < input_devices_length; ++i) {
+      char* input_device = input_devices[i];
+      if (string_ends_with(input_device, ".monitor")) {
+        result = string_duplicate(input_device);
+        break;
+      }
+    }
+    if (result == NULL) {
+      fprintf(stderr, "System source was specified, but none was found.\n");
+    }
+    return result;
+  }
+  else {
+    return string_duplicate(source);
+  }
+}
+
+static char* plain_text_from_transcript(const CandidateTranscript* transcript) {
+  char* result = string_duplicate("");
+  for (int i = 0; i < transcript->num_tokens; ++i) {
+    const TokenMetadata* token = &transcript->tokens[i];
+    char* new_result = string_append(result, token->text);
+    free(result);
+    result = new_result;
+  }
+  return result;
+}
+
+static void output_streaming_transcript(const Metadata* current_metadata,
+  const Metadata* previous_metadata) {
+  const CandidateTranscript* current_transcript =
+    &current_metadata->transcripts[0];
+  char* current_text = plain_text_from_transcript(current_transcript);
+  char* previous_text;
+  if (previous_metadata == NULL) {
+    previous_text = string_duplicate("");
+  }
+  else {
+    const CandidateTranscript* previous_transcript =
+      &previous_metadata->transcripts[0];
+    previous_text = plain_text_from_transcript(previous_transcript);
+  }
+  if (strcmp(current_text, previous_text) != 0) {
+    fprintf(stdout, "%s\n", current_text);
+  }
+  free(current_text);
+  free(previous_text);
+}
+
+static bool process_live_input(const Settings* settings, ModelState* model_state) {
+  char* device_name = get_device_name(settings->source);
+
+  const uint32_t model_rate = STT_GetModelSampleRate(model_state);
+  const pa_sample_spec sample_spec = { PA_SAMPLE_S16LE, model_rate, 1 };
+  int pa_error;
+  pa_simple* source_stream = pa_simple_new(
+    NULL, yargs_app_name(), PA_STREAM_RECORD, device_name, yargs_app_name(),
+    &sample_spec, NULL, NULL, &pa_error);
+  if (source_stream == NULL) {
+    if (device_name == NULL) {
+      fprintf(stderr, "Unable to open default audio input device.\n");
+    }
+    else {
+      fprintf(stderr,
+        "Unable to open audio input device named '%s', from source '%s'.\n",
+        device_name, settings->source);
+    }
+    fprintf(stderr, "The command 'pactl list sources' will show available devices.\n");
+    fprintf(stderr, "You can use the contents of the 'Name:' field as the '--source' argument to specify one.\n");
+    free(device_name);
+    return false;
+  }
+
+  StreamingState* streaming_state = NULL;
+  const int stream_error = STT_CreateStream(model_state, &streaming_state);
+  if (stream_error != STT_ERR_OK) {
+    const char* error_message = STT_ErrorCodeToErrorMessage(stream_error);
+    fprintf(stderr, "STT_CreateStream() failed with '%s'\n", error_message);
+    pa_simple_free(source_stream);
+    free(device_name);
+    return false;
+  }
+
+  const size_t source_buffer_byte_count = settings->source_buffer_size * 2;
+  int16_t* source_buffer = malloc(source_buffer_byte_count);
+
+  Metadata* previous_metadata = NULL;
+  while (true) {
+    int read_error;
+    const int read_result = pa_simple_read(source_stream, source_buffer,
+      source_buffer_byte_count, &read_error);
+    if (read_result < 0) {
+      fprintf(stderr, "pa_simple_read() failed with '%s'.\n",
+        pa_strerror(read_error));
+      break;
+    }
+    STT_FeedAudioContent(streaming_state, source_buffer,
+      settings->source_buffer_size);
+    Metadata* current_metadata = STT_IntermediateDecodeWithMetadata(streaming_state, 1);
+
+    output_streaming_transcript(current_metadata, previous_metadata);
+
+    if (previous_metadata != NULL) {
+      STT_FreeMetadata(previous_metadata);
+    }
+    previous_metadata = current_metadata;
+  }
+
+  if (previous_metadata != NULL) {
+    STT_FreeMetadata(previous_metadata);
+  }
+  pa_simple_free(source_stream);
+  free(device_name);
+  return true;
+}
+
+static bool process_audio(const Settings* settings, ModelState* model_state) {
+  if (strcmp(settings->source, "file") == 0) {
+    return process_files(settings, model_state);
+  }
+  else {
+    return process_live_input(settings, model_state);
+  }
+}
+
 int app_main(int argc, char** argv) {
   Settings* settings = settings_init_from_argv(argc, argv);
   if (settings == NULL) {
@@ -117,6 +260,10 @@ int app_main(int argc, char** argv) {
   }
 
   if (!load_scorer(settings, model_state)) {
+    return 1;
+  }
+
+  if (!process_audio(settings, model_state)) {
     return 1;
   }
 

@@ -55,6 +55,8 @@ extern "C" {
   int yargs_get_unnamed_length();
   const char* yargs_get_unnamed(int index);
 
+  const char* yargs_app_name();
+
 #ifdef __CPLUSPLUS
 }
 #endif  // __CPLUSPLUS

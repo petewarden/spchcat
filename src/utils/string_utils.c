@@ -101,6 +101,12 @@ void string_list_free(char** list, int list_length) {
   free(list);
 }
 
+void string_list_add(const char* new, char*** list, int* list_length) {
+  *list = realloc(*list, (*list_length + 1) * sizeof(char*));
+  (*list)[*list_length] = string_duplicate(new);
+  *list_length += 1;
+}
+
 char* string_append(const char* a, const char* b) {
   return string_alloc_sprintf("%s%s", a, b);
 }

@@ -573,3 +573,7 @@ const char* yargs_get_unnamed(int index) {
     return unnamed_args[index];
   }
 }
+
+const char* yargs_app_name() {
+  return app_name;
+}

@@ -510,6 +510,17 @@ void test_yargs_save_to_file() {
   yargs_free();
 }
 
+static void test_yargs_app_name() {
+  YargsFlag test_flags[] = {
+  };
+  const int test_flags_length = sizeof(test_flags) / sizeof(test_flags[0]);
+  char* argv[] = { "program" };
+  const int argc = sizeof(argv) / sizeof(argv[0]);
+  bool status = yargs_init(test_flags, test_flags_length, NULL, argv, argc);
+  TEST_CHECK(status);
+  TEST_STREQ("program", yargs_app_name());
+}
+
 TEST_LIST = {
   {"GetFlagWithName", test_GetFlagWithName},
   {"GetFlagWithShortName", test_GetFlagWithShortName},
@@ -521,5 +532,6 @@ TEST_LIST = {
   {"LoadFileFromContents", test_LoadFileFromContents},
   {"yargs_load_from_file", test_yargs_load_from_file},
   {"yargs_save_to_file", test_yargs_save_to_file},
+  {"yargs_app_name", test_yargs_app_name},
   {NULL, NULL},
 };
