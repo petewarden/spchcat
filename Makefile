@@ -48,6 +48,7 @@ all: \
   $(BINDIR)string_utils_test \
   $(BINDIR)yargs_test \
   $(BINDIR)settings_test \
+  $(BINDIR)app_main_test \
   $(BINDIR)spchcat
 
 clean:
@@ -65,7 +66,8 @@ test: \
   run_settings_test \
   run_pa_list_devices_test \
   run_audio_buffer_test \
-  run_wav_io_test
+  run_wav_io_test \
+  run_app_main_test
 
 $(OBJDIR)%.o: %.c $(DEPDIR)/%.d | $(DEPDIR)
 	@mkdir -p $(dir $@)
@@ -140,6 +142,21 @@ $(BINDIR)settings_test: \
 	$(CC) $(CCFLAGS) $(TEST_CCFLAGS) $^ -o $@
 
 run_settings_test: $(BINDIR)settings_test
+	$<
+
+$(BINDIR)app_main_test: \
+ $(OBJDIR)src/app_main_test.o \
+ $(OBJDIR)src/settings.o \
+ $(OBJDIR)src/audio/audio_buffer.o \
+ $(OBJDIR)src/audio/pa_list_devices.o \
+ $(OBJDIR)src/audio/wav_io.o \
+ $(OBJDIR)src/utils/file_utils.o \
+ $(OBJDIR)src/utils/string_utils.o \
+ $(OBJDIR)src/utils/yargs.o
+	@mkdir -p $(dir $@) 
+	$(CC) $(CCFLAGS) $(TEST_CCFLAGS) $^ -o $@ $(LDFLAGS)
+
+run_app_main_test: $(BINDIR)app_main_test
 	$<
 
 $(BINDIR)spchcat: \

@@ -146,7 +146,13 @@ static char* plain_text_from_transcript(const CandidateTranscript* transcript) {
     const float current_time = token->start_time;
     const float time_since_previous = current_time - previous_time;
     if (time_since_previous > 1.0f) {
-      result = string_append_in_place(result, "\n");
+      const int result_length = strlen(result);
+      if (result[result_length - 1] == ' ') {
+        result[result_length - 1] = '\n';
+      }
+      else {
+        result = string_append_in_place(result, "\n");
+      }
       if (strcmp(token->text, " ") != 0) {
         result = string_append_in_place(result, token->text);
       }
@@ -157,6 +163,44 @@ static char* plain_text_from_transcript(const CandidateTranscript* transcript) {
     previous_time = current_time;
   }
   return result;
+}
+
+static void print_changed_lines(const char* current_text,
+  const char* previous_text, FILE* file) {
+  // Has anything changed since last time?
+  if ((previous_text == NULL) ||
+    (strcmp(current_text, previous_text) == 0)) {
+    return;
+  }
+
+  if (file == NULL) {
+    file = stdout;
+  }
+
+  char** current_lines = NULL;
+  int current_lines_length = 0;
+  string_split(current_text, '\n', -1, &current_lines, &current_lines_length);
+
+  char** previous_lines = NULL;
+  int previous_lines_length = 0;
+  string_split(previous_text, '\n', -1, &previous_lines,
+    &previous_lines_length);
+
+  if (current_lines_length > previous_lines_length) {
+    int start_index = (previous_lines_length - 1);
+    if (start_index < 0) {
+      start_index = 0;
+    }
+    for (int i = start_index; i < (current_lines_length - 1); ++i) {
+      fprintf(file, "\r%s\n", current_lines[i]);
+    }
+  }
+
+  fprintf(file, "\r%s        ", current_lines[current_lines_length - 1]);
+  fflush(file);
+
+  string_list_free(current_lines, current_lines_length);
+  string_list_free(previous_lines, previous_lines_length);
 }
 
 static void output_streaming_transcript(const Metadata* current_metadata,
@@ -173,9 +217,9 @@ static void output_streaming_transcript(const Metadata* current_metadata,
       &previous_metadata->transcripts[0];
     previous_text = plain_text_from_transcript(previous_transcript);
   }
-  if (strcmp(current_text, previous_text) != 0) {
-    fprintf(stdout, "%s\n", current_text);
-  }
+
+  print_changed_lines(current_text, previous_text, stdout);
+
   free(current_text);
   free(previous_text);
 }

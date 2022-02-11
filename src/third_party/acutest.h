@@ -84,7 +84,9 @@
 #define TEST_CHECK_(cond,...)   acutest_check_((cond), __FILE__, __LINE__, __VA_ARGS__)
 #define TEST_CHECK(cond)        acutest_check_((cond), __FILE__, __LINE__, "%s", #cond)
 
+     // Custom macros added by @petewarden.
 #define TEST_STREQ(cmp, cand) TEST_CHECK(strcmp(cmp, cand) == 0); TEST_MSG("%s vs %s", cmp, cand)
+#define TEST_MEMEQ(cmp, cand, len) TEST_CHECK(memcmp(cmp, cand, len) == 0); TEST_DUMP(#cmp, cmp, len); TEST_DUMP(#cand, cand, len)
 #define TEST_INTEQ(cmp, cand) TEST_CHECK(cmp == cand); TEST_MSG("%d vs %d", cmp, cand)
 #define TEST_FLTEQ(cmp, cand, eps) TEST_CHECK(fabsf(cmp - cand) < eps); TEST_MSG("%f vs %f", cmp, cand)
 #define TEST_SIZEQ(cmp, cand) TEST_CHECK(cmp == cand); TEST_MSG("%zu vs %zu", (size_t)(cmp), cand)
@@ -835,11 +837,13 @@ extern "C" {
 
       printf("  ");
       for (off = line_beg; off < line_end; off++) {
-        unsigned char byte = ((const unsigned char*)addr)[off];
-        if (off < size)
+        if (off < size) {
+          unsigned char byte = ((const unsigned char*)addr)[off];
           printf("%c", (iscntrl(byte) ? '.' : byte));
-        else
+        }
+        else {
           break;
+        }
       }
 
       printf("\n");
@@ -1212,7 +1216,7 @@ extern "C" {
       else {
         acutest_error_("Cannot create unit test subprocess [%ld].", GetLastError());
         failed = 1;
-      }
+    }
 
 #else
 
@@ -1221,7 +1225,7 @@ extern "C" {
 
 #endif
 
-    }
+  }
     else {
       /* Child processes suppressed through --no-exec. */
       failed = (acutest_do_run_(test, index) != 0);
