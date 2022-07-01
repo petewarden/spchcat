@@ -19,20 +19,6 @@ void test_expect_data() {
   fclose(file);
 }
 
-void test_fread_and_discard() {
-  const char* test_filename = "/tmp/test_fread_and_discard";
-  file_write(test_filename, "FooBarBaz", 9);
-
-  FILE* file = fopen(test_filename, "rb");
-  TEST_CHECK(file != NULL);
-
-  TEST_CHECK(expect_data("Foo", 3, file));
-  fread_and_discard(3, file);
-  TEST_CHECK(expect_data("Baz", 3, file));
-
-  fclose(file);
-}
-
 void test_fread_uint16() {
   const char* test_filename = "/tmp/test_fread_uint16";
   uint16_t value = 0x3123;
@@ -207,7 +193,6 @@ void test_wav_io_save_listenable() {
 
 TEST_LIST = {
   {"expect_data", test_expect_data},
-  {"fread_and_discard", test_fread_and_discard},
   {"fread_uint16", test_fread_uint16},
   {"fwrite_uint16", test_fwrite_uint16},
   {"fread_uint32", test_fread_uint32},
