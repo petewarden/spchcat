@@ -68,7 +68,7 @@ bool wav_io_load(const char* filename, AudioBuffer** result) {
   fread(found_chunk_id, 4, 1, file);
   while (memcmp(found_chunk_id, "fmt ", 4) != 0) {
     const uint32_t chunk_size = fread_uint32(file);
-    fread_and_discard(chunk_size, file);
+    fseek(file, chunk_size, SEEK_CUR);
     fread(found_chunk_id, 4, 1, file);
   }
   const uint32_t format_chunk_size = fread_uint32(file);
@@ -97,13 +97,13 @@ bool wav_io_load(const char* filename, AudioBuffer** result) {
     return false;
   }
   if (format_chunk_size == 18) {
-    fread_and_discard(2, file);
+    fseek(file, 2, SEEK_CUR);
   }
 
   fread(found_chunk_id, 4, 1, file);
   while (memcmp(found_chunk_id, "data", 4) != 0) {
     const uint32_t chunk_size = fread_uint32(file);
-    fread_and_discard(chunk_size, file);
+    fseek(file, chunk_size, SEEK_CUR);
   }
 
   const uint32_t chunk_size = fread_uint32(file);
