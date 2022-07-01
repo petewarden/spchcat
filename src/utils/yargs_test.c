@@ -216,7 +216,7 @@ void test_yargs_init() {
   TEST_STREQ("new_value", some_name);
   TEST_INTEQ(32, no_short_name);
   TEST_CHECK(some_other_name);
-  TEST_FLTEQ(-99.9, float_arg, 0.0001f);
+  TEST_FLTEQ(-99.9f, float_arg, 0.0001f);
   TEST_INTEQ(2, yargs_get_unnamed_length());
   TEST_STREQ("unnamed1", yargs_get_unnamed(0));
   TEST_STREQ("unnamed2", yargs_get_unnamed(1));
@@ -255,7 +255,7 @@ void test_yargs_init() {
   TEST_STREQ("new_value", some_name);
   TEST_INTEQ(10, no_short_name);
   TEST_CHECK(some_other_name);
-  TEST_FLTEQ(-99.9, float_arg, 0.0001f);
+  TEST_FLTEQ(-99.9f, float_arg, 0.0001f);
   TEST_INTEQ(2, yargs_get_unnamed_length());
   TEST_STREQ("unnamed1", yargs_get_unnamed(0));
   TEST_STREQ("unnamed2", yargs_get_unnamed(1));
@@ -349,7 +349,7 @@ void test_LoadFileFromContents() {
   TEST_STREQ("new_value", some_name);
   TEST_INTEQ(32, no_short_name);
   TEST_CHECK(some_other_name);
-  TEST_FLTEQ(-99.9, float_arg, 0.0001f);
+  TEST_FLTEQ(-99.9f, float_arg, 0.0001f);
   TEST_INTEQ(0, yargs_get_unnamed_length());
   yargs_free();
 
@@ -379,7 +379,7 @@ void test_LoadFileFromContents() {
   TEST_STREQ("new_value", some_name);
   TEST_INTEQ(10, no_short_name);
   TEST_CHECK(some_other_name);
-  TEST_FLTEQ(-99.9, float_arg, 0.0001f);
+  TEST_FLTEQ(-99.9f, float_arg, 0.0001f);
   TEST_INTEQ(2, yargs_get_unnamed_length());
   TEST_STREQ("unnamed1", yargs_get_unnamed(0));
   TEST_STREQ("unnamed2", yargs_get_unnamed(1));
@@ -463,7 +463,7 @@ void test_yargs_load_from_file() {
   TEST_STREQ("new_value", some_name);
   TEST_INTEQ(32, no_short_name);
   TEST_CHECK(some_other_name);
-  TEST_FLTEQ(-99.9, float_arg, 0.0001f);
+  TEST_FLTEQ(-99.9f, float_arg, 0.0001f);
   TEST_INTEQ(0, yargs_get_unnamed_length());
   yargs_free();
 }
@@ -503,7 +503,7 @@ void test_yargs_save_to_file() {
   TEST_STREQ("new_value", some_name);
   TEST_INTEQ(32, no_short_name);
   TEST_CHECK(some_other_name);
-  TEST_FLTEQ(-99.9, float_arg, 0.0001f);
+  TEST_FLTEQ(-99.9f, float_arg, 0.0001f);
   TEST_INTEQ(2, yargs_get_unnamed_length());
   TEST_STREQ("unnamed1", yargs_get_unnamed(0));
   TEST_STREQ("unnamed2", yargs_get_unnamed(1));
