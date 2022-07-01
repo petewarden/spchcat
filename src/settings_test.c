@@ -1,3 +1,5 @@
+#define _POSIX_C_SOURCE 200112L
+
 #include "settings.h"
 
 #include "acutest.h"
@@ -5,9 +7,6 @@
 #include "settings.c"
 
 #include <stdlib.h>
-
-// Not sure why this declaration isn't pulled in?
-extern int setenv(const char*, const char*, int);
 
 static void create_mock_languages_dir(const char* root, const char** dirs,
   int dirs_length) {
