@@ -17,10 +17,6 @@ static bool expect_data(const char* expected, int expected_size,
   return result;
 }
 
-static void fread_and_discard(int size, FILE* file) {
-  fseek(file, size, SEEK_CUR);
-}
-
 static uint16_t fread_uint16(FILE* file) {
   uint16_t result;
   fread(&result, 2, 1, file);
