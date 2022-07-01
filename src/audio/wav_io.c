@@ -106,6 +106,7 @@ bool wav_io_load(const char* filename, AudioBuffer** result) {
   while (memcmp(found_chunk_id, "data", 4) != 0) {
     const uint32_t chunk_size = fread_uint32(file);
     fread_and_discard(chunk_size, file);
+    fread(found_chunk_id, 4, 1, file);
   }
 
   const uint32_t chunk_size = fread_uint32(file);
